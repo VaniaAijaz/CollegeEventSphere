@@ -1,10 +1,10 @@
+import dns from 'node:dns';
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
 import rateLimit from 'express-rate-limit'
-
 import connectDB from './config/db.js'
 import authRoutes         from './routes/authRoutes.js'
 import eventRoutes        from './routes/eventRoutes.js'
@@ -12,6 +12,9 @@ import registrationRoutes from './routes/registrationRoutes.js'
 import notificationRoutes from './routes/notificationRoutes.js'
 import galleryRoutes      from './routes/galleryRoutes.js'
 import adminRoutes        from './routes/adminRoutes.js'
+import boothRoutes        from './routes/boothRoutes.js'
+
+dns.setServers(['8.8.8.8']);
 
 // ── Connect DB ────────────────────────────────────────────────────────────
 connectDB()
@@ -20,7 +23,6 @@ const app = express()
 
 // ── Security middleware ───────────────────────────────────────────────────
 app.use(helmet())
-
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
@@ -54,6 +56,7 @@ app.use('/api/registrations', registrationRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/gallery',       galleryRoutes)
 app.use('/api/admin',         adminRoutes)
+app.use('/api/booths',        boothRoutes)
 
 // ── Health check ─────────────────────────────────────────────────────────
 app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: Date.now() }))

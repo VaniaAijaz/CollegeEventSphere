@@ -1,14 +1,12 @@
 import { motion } from 'framer-motion'
-import { CheckCircle2, Clock, Loader2, Shield, Trash2, Users, XCircle, Bell, Settings } from 'lucide-react'
+import { CheckCircle2, Clock, LayoutGrid, Loader2, Shield, Trash2, Users, XCircle, Bell, Settings } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 import { adminApi, eventsApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
-
 const TABS = ['Overview', 'Events', 'Users', 'Announcements']
-
 function StatCard({ label, value, icon: Icon, accent, i }) {
   return (
     <motion.div
@@ -25,7 +23,6 @@ function StatCard({ label, value, icon: Icon, accent, i }) {
     </motion.div>
   )
 }
-
 export default function AdminDashboard() {
   const { user, isAuth } = useAuth()
   const [tab,        setTab]        = useState('Overview')
@@ -35,26 +32,21 @@ export default function AdminDashboard() {
   const [users,      setUsers]      = useState([])
   const [announce,   setAnnounce]   = useState('')
   const [loading,    setLoading]    = useState(false)
-
   if (!isAuth || user?.role !== 'admin') return <Navigate to="/login" replace />
-
   useEffect(() => {
     Promise.all([adminApi.getStats(), eventsApi.getAll({ status: 'pending', limit: 50 })])
       .then(([s, e]) => { setStats(s.data.stats); setPending(e.data.events) })
       .catch(() => {})
   }, [])
-
   useEffect(() => {
     if (tab !== 'Events') return
     eventsApi.getAll({ limit: 50 }).then(({ data }) => setAllEvents(data.events)).catch(() => {})
   }, [tab])
-
   useEffect(() => {
     if (tab !== 'Users') return
     setLoading(true)
     adminApi.getUsers({ limit: 50 }).then(({ data }) => setUsers(data.users)).finally(() => setLoading(false))
   }, [tab])
-
   const handleApprove = async (id) => {
     await eventsApi.approve(id)
     setPending(p => p.filter(e => e._id !== id))
@@ -84,14 +76,11 @@ export default function AdminDashboard() {
     toast.success(`Announcement sent to ${data.sent} users`)
     setAnnounce('')
   }
-
   const thCls = 'px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-muted-foreground'
   const tdCls = 'px-4 py-3 text-sm'
-
   return (
     <div className="min-h-screen pt-[60px] bg-card/30">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 py-8">
-        {/* Header */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
           className="flex items-center justify-between mb-8"
         >
@@ -106,8 +95,6 @@ export default function AdminDashboard() {
             Admin Access
           </span>
         </motion.div>
-
-        {/* Tabs */}
         <div className="flex gap-1 p-1 bg-muted rounded-xl mb-8 w-fit">
           {TABS.map(t => (
             <button key={t} onClick={() => setTab(t)}
@@ -116,7 +103,6 @@ export default function AdminDashboard() {
             >{t}</button>
           ))}
         </div>
-
         {tab === 'Overview' && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -125,7 +111,6 @@ export default function AdminDashboard() {
               <StatCard label="Pending Approval"      value={stats?.pendingEvents}        icon={Clock}       accent="bg-amber-500/10 text-amber-500"  i={2} />
               <StatCard label="Total Registrations"   value={stats?.totalRegistrations}   icon={Users}       accent="bg-violet-500/10 text-violet-500" i={3} />
             </div>
-
             {pending.length > 0 && (
               <div className="p-6 rounded-2xl border border-amber-500/20 bg-amber-500/4">
                 <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
@@ -158,13 +143,12 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
-
         {tab === 'Events' && (
           <div className="rounded-2xl border border-border bg-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b border-border">
-                  <tr>{['Event', 'Category', 'Date', 'Seats', 'Status', ''].map(h => <th key={h} className={thCls}>{h}</th>)}</tr>
+                  <tr>{['Event', 'Category', 'Date', 'Seats', 'Status', 'Booths', ''].map(h => <th key={h} className={thCls}>{h}</th>)}</tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {allEvents.map(ev => (
@@ -181,6 +165,13 @@ export default function AdminDashboard() {
                         )}>{ev.status}</span>
                       </td>
                       <td className={tdCls}>
+                        <Link to={`/events/${ev._id}/booths`}
+                          className="inline-flex items-center gap-1.5 h-7 px-3 text-xs font-semibold rounded-lg border border-border hover:bg-foreground/5 transition-all"
+                        >
+                          <LayoutGrid className="w-3.5 h-3.5" /> Manage
+                        </Link>
+                      </td>
+                      <td className={tdCls}>
                         <button onClick={() => handleDeleteEvent(ev._id)}
                           className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/8 transition-all"
                         >
@@ -194,7 +185,6 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-
         {tab === 'Users' && (
           <div className="rounded-2xl border border-border bg-card overflow-hidden">
             {loading ? (
@@ -234,7 +224,6 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
-
         {tab === 'Announcements' && (
           <div className="max-w-xl">
             <div className="p-6 rounded-2xl border border-border bg-card space-y-4">
