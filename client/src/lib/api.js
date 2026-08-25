@@ -1,34 +1,26 @@
 import axios from 'axios'
-
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-  withCredentials: true,           // send httpOnly cookie
+  withCredentials: true,
   timeout: 15000,
 })
-
-// ── Request interceptor — attach Bearer token ─────────────────────────────
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('es_token')
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
-
-// ── Response interceptor — handle 401 globally ───────────────────────────
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem('es_token')
       localStorage.removeItem('es_user')
-      // let the individual call decide what to do
     }
     return Promise.reject(err)
   }
 )
-
 export default api
 
-// ── Auth ──────────────────────────────────────────────────────────────────
 export const authApi = {
   register: (data)   => api.post('/auth/register', data),
   login:    (data)   => api.post('/auth/login',    data),
@@ -37,7 +29,6 @@ export const authApi = {
   update:   (data)   => api.patch('/auth/update-profile', data),
 }
 
-// ── Events ────────────────────────────────────────────────────────────────
 export const eventsApi = {
   getAll:    (params)        => api.get('/events',              { params }),
   getById:   (id)            => api.get(`/events/${id}`),
@@ -49,7 +40,16 @@ export const eventsApi = {
   reject:    (id)            => api.patch(`/events/${id}/reject`),
 }
 
-// ── Registrations ─────────────────────────────────────────────────────────
+export const boothsApi = {
+  getByEvent: (eventId)       => api.get(`/booths/event/${eventId}`),
+  create:     (data)          => api.post('/booths', data),
+  bulkCreate: (data)          => api.post('/booths/bulk', data),
+  update:     (id, data)      => api.patch(`/booths/${id}`, data),
+  delete:     (id)            => api.delete(`/booths/${id}`),
+  book:       (id)            => api.post(`/booths/${id}/book`),
+  cancel:     (id)            => api.post(`/booths/${id}/cancel`),
+}
+
 export const registrationsApi = {
   register:        (eventId) => api.post(`/registrations/${eventId}`),
   cancel:          (eventId) => api.delete(`/registrations/${eventId}`),
@@ -58,21 +58,18 @@ export const registrationsApi = {
   scanQr:          (qrToken) => api.post('/registrations/scan', { qrToken }),
 }
 
-// ── Notifications ─────────────────────────────────────────────────────────
 export const notificationsApi = {
   getAll:      ()   => api.get('/notifications'),
   markAllRead: ()   => api.patch('/notifications/read-all'),
   markRead:    (id) => api.patch(`/notifications/${id}/read`),
 }
 
-// ── Gallery ───────────────────────────────────────────────────────────────
 export const galleryApi = {
   getAll:  (params)   => api.get('/gallery', { params }),
   upload:  (formData) => api.post('/gallery', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   delete:  (id)       => api.delete(`/gallery/${id}`),
 }
 
-// ── Admin ─────────────────────────────────────────────────────────────────
 export const adminApi = {
   getStats:       ()                  => api.get('/admin/stats'),
   getUsers:       (params)            => api.get('/admin/users', { params }),

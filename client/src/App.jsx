@@ -6,10 +6,10 @@ import Footer from '@/components/layout/Footer'
 import Navbar from '@/components/layout/Navbar'
 import { AuthProvider } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
-
 const Home               = lazy(() => import('@/pages/Home'))
 const Events             = lazy(() => import('@/pages/Events'))
 const EventDetail        = lazy(() => import('@/pages/EventDetail'))
+const EventBooths        = lazy(() => import('@/pages/EventBooths'))
 const Gallery            = lazy(() => import('@/pages/Gallery'))
 const Login              = lazy(() => import('@/pages/Login'))
 const Register           = lazy(() => import('@/pages/Register'))
@@ -19,8 +19,6 @@ const OrganizerDashboard = lazy(() => import('@/pages/OrganizerDashboard'))
 const About              = lazy(() => import('@/pages/About'))
 const Contact            = lazy(() => import('@/pages/Contact'))
 const Sitemap            = lazy(() => import('@/pages/Sitemap'))
-
-/* ── Minimal branded loader ───────────────────────────────────────────── */
 function PageLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center">
@@ -39,14 +37,11 @@ function PageLoader() {
     </div>
   )
 }
-
-/* ── Page transition wrapper ──────────────────────────────────────────── */
 const pageVariants = {
   initial: { opacity: 0, y: 10 },
   enter:   { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
   exit:    { opacity: 0, y: -8, transition: { duration: 0.2, ease: 'easeIn' } },
 }
-
 function AnimatedRoutes() {
   const location = useLocation()
   return (
@@ -61,20 +56,21 @@ function AnimatedRoutes() {
       >
         <Suspense fallback={<PageLoader />}>
           <Routes location={location}>
-            <Route path="/"               element={<Home />} />
-            <Route path="/events"         element={<Events />} />
-            <Route path="/events/:id"     element={<EventDetail />} />
-            <Route path="/gallery"        element={<Gallery />} />
-            <Route path="/login"          element={<Login />} />
-            <Route path="/register"       element={<Register />} />
-            <Route path="/dashboard"      element={<Dashboard />} />
-            <Route path="/dashboard/:tab" element={<Dashboard />} />
-            <Route path="/admin"          element={<AdminDashboard />} />
-            <Route path="/organizer"      element={<OrganizerDashboard />} />
-            <Route path="/about"          element={<About />} />
-            <Route path="/contact"        element={<Contact />} />
-            <Route path="/sitemap"        element={<Sitemap />} />
-            <Route path="/faq"            element={<Contact />} />
+            <Route path="/"                    element={<Home />} />
+            <Route path="/events"              element={<Events />} />
+            <Route path="/events/:id"          element={<EventDetail />} />
+            <Route path="/events/:id/booths"   element={<EventBooths />} />
+            <Route path="/gallery"             element={<Gallery />} />
+            <Route path="/login"               element={<Login />} />
+            <Route path="/register"            element={<Register />} />
+            <Route path="/dashboard"           element={<Dashboard />} />
+            <Route path="/dashboard/:tab"      element={<Dashboard />} />
+            <Route path="/admin"               element={<AdminDashboard />} />
+            <Route path="/organizer"           element={<OrganizerDashboard />} />
+            <Route path="/about"               element={<About />} />
+            <Route path="/contact"             element={<Contact />} />
+            <Route path="/sitemap"             element={<Sitemap />} />
+            <Route path="/faq"                 element={<Contact />} />
             <Route path="*" element={
               <div className="min-h-screen flex flex-col items-center justify-center gap-5 pt-20 text-center px-5">
                 <div className="text-7xl font-black text-muted-foreground/20">404</div>
@@ -91,7 +87,6 @@ function AnimatedRoutes() {
     </AnimatePresence>
   )
 }
-
 export default function App() {
   return (
     <ThemeProvider>

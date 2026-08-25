@@ -1,18 +1,16 @@
 import { format } from 'date-fns'
 import { motion } from 'framer-motion'
-import { Calendar, CheckCircle2, Clock, Loader2, Plus, QrCode, TrendingUp, Users, X } from 'lucide-react'
+import { Calendar, CheckCircle2, Clock, LayoutGrid, Loader2, Plus, QrCode, TrendingUp, Users, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuth } from '@/context/AuthContext'
 import { CATEGORIES, DEPARTMENTS } from '@/data/mockData'
 import { eventsApi, registrationsApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
-
 const EMPTY = { title: '', category: '', department: '', date: '', time: '', endTime: '', venue: '', description: '', totalSeats: '' }
 const TABS = ['overview', 'events', 'attendance']
-
 function StatCard({ label, value, icon: Icon, accent, i }) {
   return (
     <motion.div
@@ -29,7 +27,6 @@ function StatCard({ label, value, icon: Icon, accent, i }) {
     </motion.div>
   )
 }
-
 export default function OrganizerDashboard() {
   const { user, isAuth } = useAuth()
   const [tab,        setTab]        = useState('overview')
@@ -40,14 +37,11 @@ export default function OrganizerDashboard() {
   const [newEvent,   setNewEvent]   = useState(EMPTY)
   const [qrInput,    setQrInput]    = useState('')
   const [scanMsg,    setScanMsg]    = useState(null)
-
   if (!isAuth || user?.role !== 'organizer') return <Navigate to="/login" replace />
-
   useEffect(() => {
     setLoading(true)
     eventsApi.getMyEvents().then(({ data }) => setEvents(data.events)).catch(() => {}).finally(() => setLoading(false))
   }, [])
-
   const handleCreate = async (e) => {
     e.preventDefault()
     const required = ['title', 'category', 'date', 'time', 'endTime', 'venue', 'totalSeats']
@@ -67,7 +61,6 @@ export default function OrganizerDashboard() {
       setSubmitting(false)
     }
   }
-
   const handleQr = async () => {
     if (!qrInput.trim()) return
     setScanMsg(null)
@@ -82,15 +75,12 @@ export default function OrganizerDashboard() {
       toast.error(msg)
     }
   }
-
   const totalReg  = events.reduce((s, e) => s + (e.seatsBooked || 0), 0)
   const avgRating = events.length ? (events.reduce((s, e) => s + (e.rating || 0), 0) / events.length).toFixed(1) : '—'
   const inputCls  = 'w-full h-10 px-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all'
-
   return (
     <div className="min-h-screen pt-[60px] bg-card/30">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 py-8">
-        {/* Header */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
           className="flex items-center justify-between mb-8"
         >
@@ -104,8 +94,6 @@ export default function OrganizerDashboard() {
             <Plus className="w-4 h-4" /> Create Event
           </button>
         </motion.div>
-
-        {/* Tabs */}
         <div className="flex gap-1 p-1 bg-muted rounded-xl mb-8 w-fit">
           {TABS.map(t => (
             <button key={t} onClick={() => setTab(t)}
@@ -114,7 +102,6 @@ export default function OrganizerDashboard() {
             >{t}</button>
           ))}
         </div>
-
         {tab === 'overview' && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -123,7 +110,6 @@ export default function OrganizerDashboard() {
               <StatCard label="Avg Rating"           value={avgRating}     icon={TrendingUp}   accent="bg-amber-500/10 text-amber-500"  i={2} />
               <StatCard label="Pending Review"       value={events.filter(e => e.status === 'pending').length} icon={CheckCircle2} accent="bg-emerald-500/10 text-emerald-500" i={3} />
             </div>
-
             {loading ? (
               <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
             ) : (
@@ -153,7 +139,6 @@ export default function OrganizerDashboard() {
             )}
           </div>
         )}
-
         {tab === 'events' && (
           <div>
             <h2 className="text-[17px] font-bold mb-5">My Events</h2>
@@ -175,6 +160,11 @@ export default function OrganizerDashboard() {
                       <p className="text-xs text-muted-foreground">{format(new Date(ev.date), 'MMM d')} · {ev.venue}</p>
                       <p className="text-xs text-muted-foreground">{ev.seatsBooked}/{ev.totalSeats} registered</p>
                     </div>
+                    <Link to={`/events/${ev._id}/booths`}
+                      className="flex-shrink-0 inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold rounded-lg border border-border hover:bg-foreground/5 transition-all"
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5" /> Booths
+                    </Link>
                     <span className={cn('text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full flex-shrink-0 capitalize',
                       ev.status === 'upcoming' ? 'bg-emerald-500/10 text-emerald-500' :
                       ev.status === 'pending'  ? 'bg-amber-500/10 text-amber-500' :
@@ -186,7 +176,6 @@ export default function OrganizerDashboard() {
             )}
           </div>
         )}
-
         {tab === 'attendance' && (
           <div>
             <h2 className="text-[17px] font-bold mb-5">QR Attendance</h2>
@@ -221,8 +210,6 @@ export default function OrganizerDashboard() {
           </div>
         )}
       </div>
-
-      {/* ── Create Event Modal ── */}
       {showCreate && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <motion.div
