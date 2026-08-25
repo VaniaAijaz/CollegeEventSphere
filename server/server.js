@@ -1,3 +1,7 @@
+import dns from 'node:dns'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
@@ -13,13 +17,21 @@ import notificationRoutes from './routes/notificationRoutes.js'
 import galleryRoutes      from './routes/galleryRoutes.js'
 import adminRoutes        from './routes/adminRoutes.js'
 
+dns.setServers(['8.8.8.8'])
+
+// ── __dirname setup (ES modules mein __dirname available nahi hota) ──────
+const __filename = fileURLToPath(import.meta.url)
+const __dirname  = path.dirname(__filename)
+
 // ── Connect DB ────────────────────────────────────────────────────────────
 connectDB()
 
 const app = express()
 
 // ── Security middleware ───────────────────────────────────────────────────
-app.use(helmet())
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }, // taake images frontend (different port) pe load ho sakein
+}))
 
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
@@ -46,6 +58,9 @@ const authLimiter = rateLimit({
 app.use(express.json({ limit: '5mb' }))
 app.use(express.urlencoded({ extended: true, limit: '5mb' }))
 app.use(cookieParser())
+
+// ── Static file serving (uploaded images) ─────────────────────────────────
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
 // ── Routes ────────────────────────────────────────────────────────────────
 app.use('/api/auth',          authLimiter, authRoutes)

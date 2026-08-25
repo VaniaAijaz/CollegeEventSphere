@@ -1,14 +1,37 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, ZoomIn } from 'lucide-react'
-import { useState } from 'react'
-import { CATEGORIES, GALLERY } from '@/data/mockData'
+import { useState, useEffect } from 'react'
+import { CATEGORIES } from '@/data/mockData'
 import { cn } from '@/lib/utils'
+
+const API_BASE = 'http://localhost:5000'
 
 export default function Gallery() {
   const [filter,   setFilter]   = useState('all')
   const [lightbox, setLightbox] = useState(null)
+  const [gallery,  setGallery]  = useState([])
+  const [loading,  setLoading]  = useState(true)
 
-  const filtered = filter === 'all' ? GALLERY : GALLERY.filter(g => g.category === filter)
+  useEffect(() => {
+    const fetchGallery = async () => {
+      setLoading(true)
+      try {
+        const url = filter === 'all'
+          ? `${API_BASE}/api/gallery`
+          : `${API_BASE}/api/gallery?category=${filter}`
+        const res = await fetch(url)
+        const data = await res.json()
+        setGallery(data.items || [])
+      } catch (err) {
+        console.error('Gallery fetch error:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchGallery()
+  }, [filter])
+
+  const filtered = gallery
 
   return (
     <div className="min-h-screen pt-[60px]">
@@ -41,42 +64,49 @@ export default function Gallery() {
           ))}
         </div>
 
-        {/* Masonry grid */}
-        <motion.div layout className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
-          <AnimatePresence>
-            {filtered.map((item, i) => (
-              <motion.div
-                key={item._id}
-                layout
-                initial={{ opacity: 0, scale: 0.92 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.92 }}
-                transition={{ duration: 0.35, delay: i * 0.03 }}
-                className="break-inside-avoid cursor-pointer group relative rounded-xl overflow-hidden border border-border"
-                onClick={() => setLightbox(item)}
-              >
-                <img
-                  src={item.file_url}
-                  alt={item.caption}
-                  className="w-full object-cover transition-transform duration-600 group-hover:scale-105"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-colors duration-300" />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center text-white">
-                    <ZoomIn className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                  <p className="text-white text-xs font-semibold truncate">{item.caption}</p>
-                  <span className="inline-block mt-1 text-[10px] font-semibold uppercase tracking-wider text-white/60">{item.category}</span>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+        {/* Loading state */}
+        {loading && (
+          <div className="text-center py-24 text-muted-foreground">Loading gallery...</div>
+        )}
 
-        {filtered.length === 0 && (
+        {/* Masonry grid */}
+        {!loading && (
+          <motion.div layout className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
+            <AnimatePresence>
+              {filtered.map((item, i) => (
+                <motion.div
+                  key={item._id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.92 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.92 }}
+                  transition={{ duration: 0.35, delay: i * 0.03 }}
+                  className="break-inside-avoid cursor-pointer group relative rounded-xl overflow-hidden border border-border"
+                  onClick={() => setLightbox(item)}
+                >
+                  <img
+                    src={`${API_BASE}${item.file_url}`}
+                    alt={item.caption}
+                    className="w-full object-cover transition-transform duration-600 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-colors duration-300" />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center text-white">
+                      <ZoomIn className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                    <p className="text-white text-xs font-semibold truncate">{item.caption}</p>
+                    <span className="inline-block mt-1 text-[10px] font-semibold uppercase tracking-wider text-white/60">{item.category}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+        {!loading && filtered.length === 0 && (
           <div className="text-center py-24 text-muted-foreground">No photos found for this category.</div>
         )}
       </div>
@@ -102,7 +132,7 @@ export default function Gallery() {
               className="relative max-w-4xl w-full"
               onClick={e => e.stopPropagation()}
             >
-              <img src={lightbox.file_url} alt={lightbox.caption} className="w-full rounded-2xl" />
+              <img src={`${API_BASE}${lightbox.file_url}`} alt={lightbox.caption} className="w-full rounded-2xl" />
               <div className="mt-4 text-center">
                 <p className="font-semibold text-white">{lightbox.caption}</p>
                 <span className="text-xs uppercase tracking-wider text-white/50 mt-1 inline-block">{lightbox.category}</span>

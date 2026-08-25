@@ -1,60 +1,57 @@
+import fs from 'fs'
 import Gallery from '../models/Gallery.js'
-import Event from '../models/Event.js'
-import { cloudinary } from '../utils/cloudinary.js'
 
-// GET /api/gallery  (public)
-export const getGallery = async (req, res) => {
+// GET /api/gallery
+export const getAllGalleryItems = async (req, res) => {
   try {
     const filter = {}
-    if (req.query.eventId)  filter.event    = req.query.eventId
-    if (req.query.category) filter.category = req.query.category
-
-    const gallery = await Gallery.find(filter)
-      .populate('event', 'title category')
-      .populate('uploadedBy', 'name')
-      .sort({ createdAt: -1 })
-      .lean()
-
-    res.json({ success: true, gallery })
+    if (req.query.category && req.query.category !== 'all') {
+      filter.category = req.query.category
+    }
+    const items = await Gallery.find(filter).sort({ createdAt: -1 }).lean()
+    res.json({ success: true, items })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
 }
 
-// POST /api/gallery  (organizer | admin)
-export const uploadPhoto = async (req, res) => {
+// POST /api/gallery
+export const addGalleryItem = async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ message: 'Image required' })
+    const { caption, category, event } = req.body
+    if (!req.file) return res.status(400).json({ message: 'Image file is required' })
+    if (!caption || !category) return res.status(400).json({ message: 'Caption and category are required' })
 
-    const { eventId, caption } = req.body
-    const event = await Event.findById(eventId).select('category')
-    if (!event) return res.status(404).json({ message: 'Event not found' })
+    const file_url = `/uploads/gallery/${req.file.filename}`
 
-    const photo = await Gallery.create({
-      event:      eventId,
-      uploadedBy: req.user._id,
-      file_url:   req.file.path,
-      publicId:   req.file.filename,
-      caption:    caption || '',
-      category:   event.category,
+    const item = await Gallery.create({
+      caption,
+      category,
+      file_url,
+      event: event || undefined,
+      uploadedBy: req.user?._id,
     })
 
-    res.status(201).json({ success: true, photo })
+    res.status(201).json({ success: true, item })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
 }
 
-// DELETE /api/gallery/:id  (admin)
-export const deletePhoto = async (req, res) => {
+// DELETE /api/gallery/:id
+export const deleteGalleryItem = async (req, res) => {
   try {
-    const photo = await Gallery.findById(req.params.id)
-    if (!photo) return res.status(404).json({ message: 'Photo not found' })
+    const item = await Gallery.findById(req.params.id)
+    if (!item) return res.status(404).json({ message: 'Item not found' })
 
-    if (photo.publicId) await cloudinary.uploader.destroy(photo.publicId)
-    await photo.deleteOne()
+    // physical file bhi disk se remove karein
+    const filePath = `.${item.file_url}`
+    fs.unlink(filePath, (err) => {
+      if (err) console.warn('File delete warning:', err.message)
+    })
 
-    res.json({ success: true, message: 'Photo deleted' })
+    await item.deleteOne()
+    res.json({ success: true, message: 'Deleted successfully' })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }

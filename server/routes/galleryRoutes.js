@@ -1,12 +1,17 @@
 import { Router } from 'express'
-import { getGallery, uploadPhoto, deletePhoto } from '../controllers/galleryController.js'
+import {
+  getAllGalleryItems, addGalleryItem, deleteGalleryItem,
+} from '../controllers/galleryController.js'
 import { protect, authorize } from '../middleware/auth.js'
-import { uploadGalleryImage } from '../utils/cloudinary.js'
+import upload from '../middleware/upload.js'
 
 const router = Router()
 
-router.get ('/', getGallery)
-router.post('/', protect, authorize('organizer', 'admin'), uploadGalleryImage.single('image'), uploadPhoto)
-router.delete('/:id', protect, authorize('admin'), deletePhoto)
+// Public — sab dekh sakte hain
+router.get('/', getAllGalleryItems)
+
+// Protected — sirf admin/organizer add/delete kar sakte hain
+router.post('/',    protect, authorize('admin', 'organizer'), upload.single('image'), addGalleryItem)
+router.delete('/:id', protect, authorize('admin', 'organizer'), deleteGalleryItem)
 
 export default router

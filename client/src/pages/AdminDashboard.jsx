@@ -1,13 +1,14 @@
 import { motion } from 'framer-motion'
-import { CheckCircle2, Clock, Loader2, Shield, Trash2, Users, XCircle, Bell, Settings } from 'lucide-react'
+import { CheckCircle2, Clock, Loader2, Shield, Trash2, Users, XCircle, Bell, Settings, ImagePlus, Upload } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
-import { adminApi, eventsApi } from '@/lib/api'
+import { adminApi, eventsApi, galleryApi } from '@/lib/api'
+import { CATEGORIES } from '@/data/mockData'
 import { cn } from '@/lib/utils'
 
-const TABS = ['Overview', 'Events', 'Users', 'Announcements']
+const TABS = ['Overview', 'Events', 'Users', 'Gallery', 'Announcements']
 
 function StatCard({ label, value, icon: Icon, accent, i }) {
   return (
@@ -36,6 +37,14 @@ export default function AdminDashboard() {
   const [announce,   setAnnounce]   = useState('')
   const [loading,    setLoading]    = useState(false)
 
+  // ── Gallery state ──────────────────────────────────────────────────────
+  const [galleryItems,   setGalleryItems]   = useState([])
+  const [galleryLoading, setGalleryLoading] = useState(false)
+  const [uploading,      setUploading]      = useState(false)
+  const [caption,        setCaption]        = useState('')
+  const [category,       setCategory]       = useState('')
+  const [file,           setFile]           = useState(null)
+
   if (!isAuth || user?.role !== 'admin') return <Navigate to="/login" replace />
 
   useEffect(() => {
@@ -54,6 +63,23 @@ export default function AdminDashboard() {
     setLoading(true)
     adminApi.getUsers({ limit: 50 }).then(({ data }) => setUsers(data.users)).finally(() => setLoading(false))
   }, [tab])
+
+  useEffect(() => {
+    if (tab !== 'Gallery') return
+    fetchGallery()
+  }, [tab])
+
+  const fetchGallery = async () => {
+    setGalleryLoading(true)
+    try {
+      const { data } = await galleryApi.getAll()
+      setGalleryItems(data.items)
+    } catch {
+      toast.error('Failed to load gallery')
+    } finally {
+      setGalleryLoading(false)
+    }
+  }
 
   const handleApprove = async (id) => {
     await eventsApi.approve(id)
@@ -83,6 +109,43 @@ export default function AdminDashboard() {
     const { data } = await adminApi.sendAnnounce(announce)
     toast.success(`Announcement sent to ${data.sent} users`)
     setAnnounce('')
+  }
+
+  // ── Gallery handlers ───────────────────────────────────────────────────
+  const handleUpload = async (e) => {
+    e.preventDefault()
+    if (!file)     return toast.error('Please select an image')
+    if (!caption)  return toast.error('Please enter a caption')
+    if (!category) return toast.error('Please select a category')
+
+    const formData = new FormData()
+    formData.append('image', file)
+    formData.append('caption', caption)
+    formData.append('category', category)
+
+    setUploading(true)
+    try {
+      const { data } = await galleryApi.upload(formData)
+      setGalleryItems(prev => [data.item, ...prev])
+      toast.success('Image uploaded successfully!')
+      setCaption(''); setCategory(''); setFile(null)
+      e.target.reset()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Upload failed')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleDeleteImage = async (id) => {
+    if (!confirm('Delete this image permanently?')) return
+    try {
+      await galleryApi.delete(id)
+      setGalleryItems(prev => prev.filter(item => item._id !== id))
+      toast.success('Image deleted')
+    } catch {
+      toast.error('Failed to delete image')
+    }
   }
 
   const thCls = 'px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-muted-foreground'
@@ -232,6 +295,83 @@ export default function AdminDashboard() {
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {tab === 'Gallery' && (
+          <div className="space-y-6">
+            {/* Upload form */}
+            <div className="p-6 rounded-2xl border border-border bg-card">
+              <h2 className="font-bold text-[17px] mb-4 flex items-center gap-2">
+                <ImagePlus className="w-4.5 h-4.5" /> Upload New Image
+              </h2>
+              <form onSubmit={handleUpload} className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+                <div className="flex-1 w-full space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Caption</label>
+                  <input
+                    type="text" value={caption} onChange={e => setCaption(e.target.value)}
+                    placeholder="e.g. Robotics Workshop Demo"
+                    className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </div>
+                <div className="w-full sm:w-48 space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Category</label>
+                  <select
+                    value={category} onChange={e => setCategory(e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  >
+                    <option value="">Select category</option>
+                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="w-full sm:w-56 space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Image File</label>
+                  <input
+                    type="file" accept="image/*" onChange={e => setFile(e.target.files[0])}
+                    className="w-full text-xs file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                  />
+                </div>
+                <button type="submit" disabled={uploading}
+                  className="flex items-center gap-2 h-10 px-5 text-sm font-semibold rounded-xl bg-foreground text-background hover:opacity-90 transition-all disabled:opacity-50 whitespace-nowrap"
+                >
+                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  {uploading ? 'Uploading...' : 'Upload'}
+                </button>
+              </form>
+            </div>
+
+            {/* Gallery grid */}
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <h2 className="font-bold text-[17px] mb-4">All Images ({galleryItems.length})</h2>
+              {galleryLoading ? (
+                <div className="flex justify-center py-14"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+              ) : galleryItems.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-10">No images uploaded yet.</p>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {galleryItems.map(item => (
+                    <div key={item._id} className="relative group rounded-xl overflow-hidden border border-border">
+                      <img
+                        src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${item.file_url}`}
+                        alt={item.caption}
+                        className="w-full h-32 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors" />
+                      <button
+                        onClick={() => handleDeleteImage(item._id)}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <div className="absolute bottom-0 inset-x-0 p-2 translate-y-full group-hover:translate-y-0 transition-transform">
+                        <p className="text-white text-[11px] font-semibold truncate">{item.caption}</p>
+                        <span className="text-[9px] uppercase tracking-wider text-white/70">{item.category}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
