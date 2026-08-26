@@ -161,7 +161,7 @@ export default function Navbar() {
                   setShowSuggestions(false)
                   navigate(`/events?search=${encodeURIComponent(searchQuery.trim())}`);
                 }
-              }} className="flex items-center gap-2 px-4 py-0 text-sm font-medium text-muted-foreground transition-colors hairline-all rounded-full bg-transparent">
+              }} className="flex items-center gap-2 px-4 py-0 text-sm font-medium text-muted-foreground transition-colors rounded-full bg-transparent">
                 <Search className="w-4 h-4 text-muted-foreground" />
                 <input 
                   value={searchQuery}

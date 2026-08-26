@@ -127,6 +127,7 @@
 /* ════════════════════════════════════════════════════════════════════════
    EDITORIAL & GALLERY UTILITIES
    ════════════════════════════════════════════════════════════════════════ */
+@layer components {
 
 /* Strict CSS Grid layout base */
 .editorial-grid {
@@ -276,6 +277,8 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
+
+} /* End of @layer components */
 
 /* ── Scrollbar ───────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }

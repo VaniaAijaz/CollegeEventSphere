@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Loader2, ArrowLeft, UserCircle2, Trash2 } from 'lucide-react'
+import { Send, Loader2, ArrowLeft, UserCircle2, Trash2, MessageSquare } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 import { socialApi } from '@/lib/api'

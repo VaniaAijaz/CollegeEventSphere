@@ -65,7 +65,7 @@ export default function ChatbotWidget() {
         onClick={() => setOpen(v => !v)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-foreground text-background border border-foreground flex items-center justify-center transition-colors"
+        className="fixed bottom-6 right-6 z-50 h-14 bg-foreground text-background rounded-full shadow-2xl flex items-center justify-center transition-all px-5 gap-3"
         aria-label="Open AI chatbot"
       >
         <AnimatePresence mode="wait">
@@ -74,8 +74,9 @@ export default function ChatbotWidget() {
               <X className="w-5 h-5 text-background" />
             </motion.span>
           ) : (
-            <motion.span key="bot" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}>
+            <motion.span key="bot" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-background" />
+              <span className="text-sm font-bold tracking-tight">AI Chat</span>
             </motion.span>
           )}
         </AnimatePresence>

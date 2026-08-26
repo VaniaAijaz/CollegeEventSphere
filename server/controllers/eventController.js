@@ -2,6 +2,7 @@ import { body } from 'express-validator'
 import Event from '../models/Event.js'
 import Registration from '../models/Registration.js'
 import { cloudinary } from '../utils/cloudinary.js'
+import { sendMail, eventStatusMail } from '../utils/email.js'
 
 // ── Validators ────────────────────────────────────────────────────────────
 
@@ -169,8 +170,12 @@ export const approveEvent = async (req, res) => {
       req.params.id,
       { status: 'upcoming' },
       { new: true }
-    )
+    ).populate('organizer', 'name email')
     if (!event) return res.status(404).json({ message: 'Event not found' })
+    
+    // Notify organizer
+    sendMail({ to: event.organizer.email, ...eventStatusMail(event.organizer.name, event.title, 'upcoming') })
+    
     res.json({ success: true, event })
   } catch (err) {
     res.status(500).json({ message: err.message })
@@ -184,8 +189,12 @@ export const rejectEvent = async (req, res) => {
       req.params.id,
       { status: 'cancelled' },
       { new: true }
-    )
+    ).populate('organizer', 'name email')
     if (!event) return res.status(404).json({ message: 'Event not found' })
+    
+    // Notify organizer
+    sendMail({ to: event.organizer.email, ...eventStatusMail(event.organizer.name, event.title, 'cancelled') })
+    
     res.json({ success: true, event })
   } catch (err) {
     res.status(500).json({ message: err.message })

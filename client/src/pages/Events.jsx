@@ -121,7 +121,6 @@ export default function Events() {
               <SelectContent className="editorial-frame">
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="upcoming">Upcoming</SelectItem>
-                <SelectItem value="past">Past</SelectItem>
               </SelectContent>
             </Select>
           </div>

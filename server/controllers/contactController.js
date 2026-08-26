@@ -1,4 +1,4 @@
-import { sendMail } from '../utils/email.js'
+import { sendMail, contactMail } from '../utils/email.js'
 
 export const sendContactMessage = async (req, res) => {
   try {
@@ -8,23 +8,9 @@ export const sendContactMessage = async (req, res) => {
       return res.status(400).json({ message: 'Name, email and message are required' })
     }
 
-    const mailSubject = subject
-      ? `[Contact] ${subject}`
-      : `[Contact] New message from ${name}`
-
     await sendMail({
       to: process.env.MAIL_TO || process.env.MAIL_USER,
-      subject: mailSubject,
-      html: `
-        <div style="font-family:sans-serif;max-width:520px;margin:auto">
-          <h2>New Contact Message</h2>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          ${subject ? `<p><strong>Subject:</strong> ${subject}</p>` : ''}
-          <p><strong>Message:</strong></p>
-          <p style="white-space:pre-wrap">${message}</p>
-          <p style="color:#888;font-size:12px">Reply directly to this email to respond to ${name}.</p>
-        </div>`,
+      ...contactMail(name, email, subject, message),
       replyTo: email,
     })
 

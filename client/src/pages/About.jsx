@@ -73,56 +73,56 @@ export default function About() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {VALUES.map(({ icon: Icon, title, desc }, i) => (
                 <Reveal key={title} delay={i * 0.08} className="bg-background">
-                  <div className="p-8 h-full flex flex-col items-start gap-6 editorial-frame hover:bg-secondary/10 transition-colors">
-                    <div className="w-12 h-12 bg-foreground text-background flex items-center justify-center">
-                      <Icon className="w-5 h-5" />
+                    <div className="p-8 h-full flex flex-col items-start gap-6 editorial-frame border-foreground hover:bg-secondary/10 transition-colors">
+                      <div className="w-12 h-12 bg-foreground text-background flex items-center justify-center">
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-extrabold text-xl mb-3">{title}</h3>
+                        <p className="text-base font-medium text-muted-foreground leading-relaxed">{desc}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-extrabold text-xl mb-3">{title}</h3>
-                      <p className="text-base font-medium text-muted-foreground leading-relaxed">{desc}</p>
-                    </div>
-                  </div>
-                </Reveal>
-              ))}
+                  </Reveal>
+                ))}
+              </div>
             </div>
-          </div>
-        </Reveal>
-      </div>
-
-      <div className="w-full hairline-t" />
-
-      {/* Tech Stack */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-12 py-32">
-        <Reveal className="mb-16">
-          <p className="meta-text text-muted-foreground mb-6">Technology</p>
-          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter">Built with modern tech</h2>
-        </Reveal>
-        <div className="flex flex-wrap gap-4">
-          {STACK.map((tech, i) => (
-            <Reveal key={tech} delay={i * 0.04}>
-              <span className="px-6 py-3 editorial-frame text-sm font-bold uppercase tracking-widest hover:bg-foreground hover:text-background transition-colors cursor-default block">
-                {tech}
-              </span>
-            </Reveal>
-          ))}
+          </Reveal>
         </div>
-      </div>
-
-      <div className="w-full hairline-t" />
-
-      {/* Team */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-12 py-32">
-        <Reveal className="mb-16">
-          <p className="meta-text text-muted-foreground mb-6">People</p>
-          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter">Meet the team</h2>
-        </Reveal>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {TEAM.map(({ name, role, avatar }, i) => (
-            <Reveal key={name} delay={i * 0.1} className="bg-background">
-              <div className="p-10 text-center editorial-frame hover:bg-secondary/10 transition-colors">
-                <div className="relative w-32 h-32 mx-auto mb-8">
-                  <img src={avatar} alt={name} className="relative w-32 h-32 bg-muted editorial-frame object-cover" />
-                </div>
+  
+        <div className="w-full hairline-t" />
+  
+        {/* Tech Stack */}
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 py-32">
+          <Reveal className="mb-16">
+            <p className="meta-text text-muted-foreground mb-6">Technology</p>
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter">Built with modern tech</h2>
+          </Reveal>
+          <div className="flex flex-wrap gap-4">
+            {STACK.map((tech, i) => (
+              <Reveal key={tech} delay={i * 0.04}>
+                <span className="px-6 py-3 editorial-frame border-foreground text-sm font-bold uppercase tracking-widest hover:bg-foreground hover:text-background transition-colors cursor-default block">
+                  {tech}
+                </span>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+  
+        <div className="w-full hairline-t" />
+  
+        {/* Team */}
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 py-32">
+          <Reveal className="mb-16">
+            <p className="meta-text text-muted-foreground mb-6">People</p>
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter">Meet the team</h2>
+          </Reveal>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {TEAM.map(({ name, role, avatar }, i) => (
+              <Reveal key={name} delay={i * 0.1} className="bg-background">
+                <div className="p-10 text-center editorial-frame border-foreground hover:bg-secondary/10 transition-colors">
+                  <div className="relative w-32 h-32 mx-auto mb-8">
+                    <img src={avatar} alt={name} className="relative w-32 h-32 bg-muted editorial-frame border-foreground object-cover" />
+                  </div>
                 <div className="font-extrabold text-2xl mb-2">{name}</div>
                 <div className="meta-text text-muted-foreground">{role}</div>
               </div>
