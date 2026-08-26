@@ -102,7 +102,18 @@ export default function AdminDashboard() {
   const [category,       setCategory]       = useState('')
   const [file,           setFile]           = useState(null)
 
-  if (!isAuth || user?.role !== 'admin') return <Navigate to="/login" replace />
+  const fetchGallery = async () => {
+    setGalleryLoading(true)
+    try {
+      const { data } = await galleryApi.getAll()
+      setGalleryItems(data.items)
+    } catch {
+      toast.error('Failed to load gallery')
+    } finally {
+      setGalleryLoading(false)
+    }
+  }
+
   useEffect(() => {
     Promise.all([adminApi.getStats(), eventsApi.getAll({ status: 'pending', limit: 50 })])
       .then(([s, e]) => { setStats(s.data.stats); setPending(e.data.events) })
@@ -123,17 +134,7 @@ export default function AdminDashboard() {
     fetchGallery()
   }, [tab])
 
-  const fetchGallery = async () => {
-    setGalleryLoading(true)
-    try {
-      const { data } = await galleryApi.getAll()
-      setGalleryItems(data.items)
-    } catch {
-      toast.error('Failed to load gallery')
-    } finally {
-      setGalleryLoading(false)
-    }
-  }
+  if (!isAuth || user?.role !== 'admin') return <Navigate to="/login" replace />
 
   const handleApprove = async (id) => {
     await eventsApi.approve(id)
@@ -204,6 +205,7 @@ export default function AdminDashboard() {
   const thCls = 'px-4 py-4 text-left text-[11px] font-black uppercase tracking-widest text-muted-foreground'
   const tdCls = 'px-4 py-4 text-sm font-semibold'
   return (
+    <>
     <div className="min-h-screen pt-[72px] bg-background">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 py-8">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
@@ -481,6 +483,6 @@ export default function AdminDashboard() {
         />
       )}
     </AnimatePresence>
-  </div>
+    </>
   )
 }

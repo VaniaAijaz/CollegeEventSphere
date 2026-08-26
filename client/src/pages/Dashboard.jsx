@@ -45,8 +45,6 @@ export default function Dashboard() {
   const [activeTicket,  setActiveTicket]  = useState(null)
   const navigate = useNavigate()
 
-  if (!isAuth) return <Navigate to="/login" replace />
-
   useEffect(() => {
     setLoadingReg(true)
     registrationsApi.getMyReg()
@@ -62,6 +60,8 @@ export default function Dashboard() {
       .catch(() => {})
       .finally(() => setLoadingNotif(false))
   }, [])
+
+  if (!isAuth) return <Navigate to="/login" replace />
 
   const handleLogout = async () => { await logout(); toast.success('Signed out'); navigate('/') }
   const markAllRead  = async () => { await notificationsApi.markAllRead(); setNotifications(n => n.map(x => ({ ...x, read: true }))); setUnread(0) }

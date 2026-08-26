@@ -18,3 +18,8 @@ logs/
 .vscode/
 .idea/
 *.local
+
+# Markdown
+*.md
+!README.md
+!client/README.md

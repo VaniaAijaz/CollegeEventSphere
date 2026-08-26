@@ -70,12 +70,12 @@ export default function OrganizerDashboard() {
   const [scanHistory,setScanHistory]= useState([])
   const [verifying,  setVerifying]  = useState(false)
 
-  if (!isAuth || user?.role !== 'organizer') return <Navigate to="/login" replace />
-
   useEffect(() => {
     setLoading(true)
     eventsApi.getMyEvents().then(({ data }) => setEvents(data.events)).catch(() => {}).finally(() => setLoading(false))
   }, [])
+
+  if (!isAuth || user?.role !== 'organizer') return <Navigate to="/login" replace />
 
   const handleCreate = async (e) => {
     e.preventDefault()

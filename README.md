@@ -405,6 +405,21 @@ Once the seed script is executed, you can log in with any of the following accou
 
 ---
 
+## 🛠️ Recent Development Work
+
+### Bug Fixes & Refactoring
+- **Backend Configuration**: Fixed `server/package.json` to correctly point to the backend `.env` file using `--env-file=.env` instead of `--env-file=../.env`, which resolved MongoDB connection issues on startup.
+- **React Hooks**: Resolved `react-hooks/rules-of-hooks` errors across multiple components (`AdminDashboard.jsx`, `OrganizerDashboard.jsx`, `Dashboard.jsx`, and `EventBooths.jsx`) by reordering conditional early returns below all `useEffect` hooks.
+- **JSX Syntax**: Fixed a build-failing syntax error in `AdminDashboard.jsx` (Adjacent JSX elements) by wrapping the root return in a React Fragment (`<>...</>`).
+- **Linter Warnings**: Resolved React immutability warnings in `AdminDashboard.jsx` by hoisting the `fetchGallery` function definition.
+
+### Neo-Brutalism UI Overhaul
+- Updated global `index.css` with a refined Neo-Brutalism aesthetic.
+- Added rounded corners (`border-radius: 0.75rem`) to cards, buttons, and inputs for a professional look.
+- Refined `Navbar.jsx`, `Footer.jsx`, `Home.jsx`, and interior dashboard pages to utilize brutalist shadows and consistent color palettes, replacing the default yellow scheme with a sophisticated Deep Purple, Indigo, and Rose design.
+
+---
+
 ## 📄 License
 
 This project is licensed under the **MIT License**. Feel free to use and adapt it for your college or organization.

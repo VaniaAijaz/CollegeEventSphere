@@ -306,8 +306,6 @@ export default function EventBooths() {
   const [bulkSubmitting, setBulkSubmitting] = useState(false)
   const [actionLoading, setActionLoading] = useState(null)
 
-  if (!isAuth || !['admin', 'organizer'].includes(user?.role)) return <Navigate to="/login" replace />
-
   const fetchBooths = () => {
     setLoading(true)
     boothsApi.getByEvent(id)
@@ -315,8 +313,10 @@ export default function EventBooths() {
       .catch((err) => toast.error(err.response?.data?.message || 'Failed to load booths'))
       .finally(() => setLoading(false))
   }
+
   useEffect(() => { fetchBooths() }, [id])
 
+  if (!isAuth || !['admin', 'organizer'].includes(user?.role)) return <Navigate to="/login" replace />
   const openCreate = () => { setEditingBooth(null); setFormData(EMPTY_BOOTH); setShowForm(true) }
   const openEdit = (booth) => {
     setEditingBooth(booth)
