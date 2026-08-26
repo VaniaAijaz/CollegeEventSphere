@@ -14,6 +14,8 @@ import notificationRoutes from './routes/notificationRoutes.js'
 import galleryRoutes      from './routes/galleryRoutes.js'
 import adminRoutes        from './routes/adminRoutes.js'
 import boothRoutes        from './routes/boothRoutes.js'
+import chatbotRoutes from './routes/chatbotRoutes.js'
+import captionRoutes from './routes/captionRoutes.js'
 
 // ── __dirname setup (ES modules) ─────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url)
@@ -67,7 +69,8 @@ app.use('/api/notifications', notificationRoutes)
 app.use('/api/gallery',       galleryRoutes)
 app.use('/api/admin',         adminRoutes)
 app.use('/api/booths',        boothRoutes)
-
+app.use('/api/chatbot', chatbotRoutes)
+app.use('/api/captions', captionRoutes)
 // ── Health check ─────────────────────────────────────────────────────────
 app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: Date.now() }))
 

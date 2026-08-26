@@ -7,6 +7,9 @@ import Navbar from '@/components/layout/Navbar'
 import ProtectedRoute from '@/components/layout/ProtectedRoute'
 import { AuthProvider } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
+import ChatbotWidget from '@/components/chatbot/ChatbotWidget'
+
+
 const Home               = lazy(() => import('@/pages/Home'))
 const Events             = lazy(() => import('@/pages/Events'))
 const EventDetail        = lazy(() => import('@/pages/EventDetail'))
@@ -99,6 +102,7 @@ export default function App() {
               <AnimatedRoutes />
             </main>
             <Footer />
+            <ChatbotWidget />
           </div>
           <Toaster
             position="top-right"

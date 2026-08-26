@@ -1,6 +1,6 @@
 import { format } from 'date-fns'
 import { motion } from 'framer-motion'
-import { Calendar, CheckCircle2, Clock, LayoutGrid, Loader2, Plus, QrCode, TrendingUp, Users, X, Zap } from 'lucide-react'
+import { Calendar, CheckCircle2, Clock, LayoutGrid, Loader2, Plus, QrCode, Sparkles, TrendingUp, Users, X, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -56,7 +56,6 @@ function playScanSound(success) {
     }
   } catch {}
 }
-
 export default function OrganizerDashboard() {
   const { user, isAuth } = useAuth()
   const [tab,        setTab]        = useState('overview')
@@ -69,14 +68,37 @@ export default function OrganizerDashboard() {
   const [scanMsg,    setScanMsg]    = useState(null)
   const [scanHistory,setScanHistory]= useState([])
   const [verifying,  setVerifying]  = useState(false)
-
+  const [generatingCaption, setGeneratingCaption] = useState(false)
+  const [captionResult,     setCaptionResult]     = useState(null)
   useEffect(() => {
     setLoading(true)
     eventsApi.getMyEvents().then(({ data }) => setEvents(data.events)).catch(() => {}).finally(() => setLoading(false))
   }, [])
-
   if (!isAuth || user?.role !== 'organizer') return <Navigate to="/login" replace />
-
+  const handleGenerateCaption = async () => {
+    if (!newEvent.title.trim() || generatingCaption) return
+    setGeneratingCaption(true)
+    setCaptionResult(null)
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ai/generate-caption`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newEvent.title,
+          description: newEvent.description,
+          category: newEvent.category,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Failed')
+      setCaptionResult({ captions: data.captions, hashtags: data.hashtags })
+    } catch (err) {
+      toast.error(err.message || 'Could not generate caption')
+    } finally {
+      setGeneratingCaption(false)
+    }
+  }
   const handleCreate = async (e) => {
     e.preventDefault()
     const required = ['title', 'category', 'date', 'time', 'endTime', 'venue', 'totalSeats']
@@ -90,13 +112,13 @@ export default function OrganizerDashboard() {
       toast.success('Event submitted for admin approval! ✅')
       setShowCreate(false)
       setNewEvent(EMPTY)
+      setCaptionResult(null)
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create event')
     } finally {
       setSubmitting(false)
     }
   }
-
   const handleQr = async () => {
     if (!qrInput.trim() || verifying) return
     setScanMsg(null)
@@ -135,11 +157,9 @@ export default function OrganizerDashboard() {
       setVerifying(false)
     }
   }
-
   const totalReg  = events.reduce((s, e) => s + (e.seatsBooked || 0), 0)
   const avgRating = events.length ? (events.reduce((s, e) => s + (e.rating || 0), 0) / events.length).toFixed(1) : '—'
   const inputCls  = 'w-full h-12 px-4 rounded-xl border-2 border-border dark:border-border-strong bg-background text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all'
-
   return (
     <div className="min-h-screen pt-[72px] bg-background">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 py-8">
@@ -156,7 +176,6 @@ export default function OrganizerDashboard() {
             <Plus className="w-4 h-4 mr-2" /> Create Event
           </button>
         </motion.div>
-
         <div className="flex gap-2 mb-8 border-b-2 border-border/10 dark:border-border-strong/10 pb-4 overflow-x-auto">
           {TABS.map(t => (
             <button key={t} onClick={() => setTab(t)}
@@ -165,7 +184,6 @@ export default function OrganizerDashboard() {
             >{t}</button>
           ))}
         </div>
-
         {tab === 'overview' && (
           <div className="space-y-8">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -203,7 +221,6 @@ export default function OrganizerDashboard() {
             )}
           </div>
         )}
-
         {tab === 'events' && (
           <div className="space-y-6">
             <h2 className="text-3xl font-black tracking-tight mb-2">My Events</h2>
@@ -253,7 +270,6 @@ export default function OrganizerDashboard() {
             )}
           </div>
         )}
-
         {tab === 'attendance' && (
           <div className="grid lg:grid-cols-12 gap-8">
             <div className="lg:col-span-7">
@@ -267,7 +283,6 @@ export default function OrganizerDashboard() {
                     <p className="text-sm font-semibold text-muted-foreground">Scan attendee QR pass or enter security token for instant check-in verification.</p>
                   </div>
                 </div>
-
                 {scanMsg && (
                   <motion.div
                     initial={{ opacity: 0, y: -6 }}
@@ -285,7 +300,6 @@ export default function OrganizerDashboard() {
                     </div>
                   </motion.div>
                 )}
-
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Pass Token / QR Code String</label>
@@ -315,7 +329,6 @@ export default function OrganizerDashboard() {
                 </div>
               </div>
             </div>
-
             <div className="lg:col-span-5">
               <div className="p-8 brut-box bg-card h-full">
                 <h3 className="font-black text-lg mb-4 flex items-center justify-between border-b-2 border-border dark:border-border-strong pb-4">
@@ -344,7 +357,6 @@ export default function OrganizerDashboard() {
           </div>
         )}
       </div>
-
       {showCreate && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-md flex items-center justify-center p-4">
           <motion.div
@@ -415,6 +427,43 @@ export default function OrganizerDashboard() {
                   value={newEvent.description} onChange={e => setNewEvent(p => ({ ...p, description: e.target.value }))}
                   className="w-full px-4 py-3 rounded-xl border-2 border-border dark:border-border-strong bg-background text-sm font-semibold resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                 />
+                <button
+                  type="button"
+                  onClick={handleGenerateCaption}
+                  disabled={generatingCaption || !newEvent.title.trim()}
+                  className="btn-brut text-xs px-4 py-2 mt-1 disabled:opacity-40"
+                >
+                  {generatingCaption ? (
+                    <><Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> Generating...</>
+                  ) : (
+                    <><Sparkles className="w-3.5 h-3.5 mr-2" /> Generate AI Caption + Hashtags</>
+                  )}
+                </button>
+
+                {captionResult && (
+                  <div className="mt-3 p-4 rounded-xl border-2 border-border dark:border-border-strong bg-muted/50 space-y-3">
+                    <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Caption Options</p>
+                    {captionResult.captions.map((c, i) => (
+                      <div key={i} className="flex items-start gap-2 p-3 rounded-lg bg-background border-2 border-border dark:border-border-strong">
+                        <p className="text-sm font-semibold flex-1">{c}</p>
+                        <button
+                          type="button"
+                          onClick={() => { setNewEvent(p => ({ ...p, description: c })); toast.success('Caption applied to description') }}
+                          className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded bg-primary text-primary-foreground flex-shrink-0"
+                        >
+                          Use
+                        </button>
+                      </div>
+                    ))}
+                    {captionResult.hashtags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {captionResult.hashtags.map((h, i) => (
+                          <span key={i} className="tag bg-secondary text-secondary-foreground border-border dark:border-border-strong">{h}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-400 dark:border-amber-600 shadow-[2px_2px_0px_theme(colors.amber.400)] dark:shadow-[2px_2px_0px_theme(colors.amber.600)] text-amber-800 dark:text-amber-400">
                 <Clock className="w-5 h-5 flex-shrink-0" />
