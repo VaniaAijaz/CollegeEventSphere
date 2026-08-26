@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, UserPlus, UserCheck, MessageSquare, BookOpen, Award, CheckCircle2, Loader2, Github, Linkedin } from 'lucide-react'
+import { ArrowLeft, UserPlus, UserCheck, MessageSquare, BookOpen, Award, CheckCircle2, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { socialApi } from '@/lib/api'

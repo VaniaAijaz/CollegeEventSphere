@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Suspense, lazy, useEffect } from 'react'
+import { Suspense, lazy, useEffect, Component } from 'react'
 import { Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import Footer from '@/components/layout/Footer'
@@ -25,6 +25,38 @@ const Contact            = lazy(() => import('@/pages/Contact'))
 const Sitemap            = lazy(() => import('@/pages/Sitemap'))
 const Profile            = lazy(() => import('@/pages/Profile'))
 const Messages           = lazy(() => import('@/pages/Messages'))
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center gap-5 pt-20 text-center px-5">
+          <div className="text-7xl font-black text-destructive/20">Oops</div>
+          <h1 className="text-2xl font-bold">Something went wrong</h1>
+          <p className="text-muted-foreground text-sm max-w-sm">We're sorry, but the application crashed. Refresh the page to try again.</p>
+          <button onClick={() => window.location.reload()} className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-foreground text-background hover:opacity-90 transition-all">
+            Reload Page
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function PageLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -112,7 +144,9 @@ export default function App() {
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <main className="flex-1 flex flex-col">
-              <AnimatedRoutes />
+              <ErrorBoundary>
+                <AnimatedRoutes />
+              </ErrorBoundary>
             </main>
             <Footer />
             <ChatbotWidget />

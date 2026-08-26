@@ -85,4 +85,5 @@ export const socialApi = {
   getConversations: ()         => api.get('/social/messages/conversations'),
   getMessages:      (userId)   => api.get(`/social/messages/${userId}`),
   sendMessage:      (userId, text) => api.post(`/social/messages/${userId}`, { text }),
+  deleteChat:       (userId)   => api.delete(`/social/messages/${userId}`),
 }

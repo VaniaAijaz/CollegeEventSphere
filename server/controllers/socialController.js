@@ -67,7 +67,8 @@ export const getConversations = async (req, res) => {
 
     // Find all unique users we've messaged with
     const messages = await Message.find({
-      $or: [{ sender: myId }, { receiver: myId }]
+      $or: [{ sender: myId }, { receiver: myId }],
+      deletedBy: { $ne: myId }
     }).sort({ createdAt: -1 }).populate('sender', 'name avatar role').populate('receiver', 'name avatar role').lean()
 
     const convMap = new Map()
@@ -106,7 +107,8 @@ export const getMessages = async (req, res) => {
       $or: [
         { sender: myId, receiver: otherId },
         { sender: otherId, receiver: myId }
-      ]
+      ],
+      deletedBy: { $ne: myId }
     }).sort({ createdAt: 1 }).lean()
 
     // mark as read
@@ -134,6 +136,28 @@ export const sendMessage = async (req, res) => {
     })
 
     res.status(201).json({ success: true, message: msg })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}
+
+// DELETE /api/social/messages/:userId
+export const deleteChat = async (req, res) => {
+  try {
+    const myId = req.user._id
+    const otherId = req.params.userId
+
+    await Message.updateMany(
+      {
+        $or: [
+          { sender: myId, receiver: otherId },
+          { sender: otherId, receiver: myId }
+        ]
+      },
+      { $addToSet: { deletedBy: myId } }
+    )
+
+    res.json({ success: true, message: 'Chat cleared' })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }

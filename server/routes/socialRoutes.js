@@ -5,7 +5,8 @@ import {
   unfollowUser,
   getConversations,
   getMessages,
-  sendMessage
+  sendMessage,
+  deleteChat
 } from '../controllers/socialController.js'
 import { protect } from '../middleware/auth.js'
 
@@ -19,5 +20,6 @@ router.post('/unfollow/:id', protect, unfollowUser)
 router.get('/messages/conversations', protect, getConversations)
 router.get('/messages/:userId', protect, getMessages)
 router.post('/messages/:userId', protect, sendMessage)
+router.delete('/messages/:userId', protect, deleteChat)
 
 export default router

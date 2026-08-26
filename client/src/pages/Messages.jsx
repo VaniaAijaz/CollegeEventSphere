@@ -1,12 +1,13 @@
 import { useEffect, useState, useRef } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Loader2, ArrowLeft, UserCircle2 } from 'lucide-react'
+import { Send, Loader2, ArrowLeft, UserCircle2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 import { socialApi } from '@/lib/api'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
+import CryptoJS from 'crypto-js'
 
 export default function Messages() {
   const { user, isAuth } = useAuth()
@@ -28,7 +29,17 @@ export default function Messages() {
   const fetchConversations = async () => {
     try {
       const { data } = await socialApi.getConversations()
-      setConversations(data.conversations)
+      const decConvs = data.conversations.map(conv => {
+        const secret = [user._id, conv.user._id].sort().join('_') + '_secret'
+        try {
+          const bytes = CryptoJS.AES.decrypt(conv.lastMessage, secret)
+          const pt = bytes.toString(CryptoJS.enc.Utf8)
+          return { ...conv, lastMessage: pt || conv.lastMessage }
+        } catch {
+          return conv
+        }
+      })
+      setConversations(decConvs)
     } catch {
       // ignore
     } finally {
@@ -40,7 +51,17 @@ export default function Messages() {
   const fetchMessages = async (userId) => {
     try {
       const { data } = await socialApi.getMessages(userId)
-      setMessages(data.messages)
+      const secret = [user._id, userId].sort().join('_') + '_secret'
+      const decryptedMessages = data.messages.map(m => {
+        try {
+          const bytes = CryptoJS.AES.decrypt(m.text, secret)
+          const pt = bytes.toString(CryptoJS.enc.Utf8)
+          return { ...m, text: pt || m.text }
+        } catch {
+          return m
+        }
+      })
+      setMessages(decryptedMessages)
       scrollToBottom()
     } catch {
       // ignore
@@ -73,6 +94,20 @@ export default function Messages() {
     }, 100)
   }
 
+  const handleClearChat = async () => {
+    if (!activeUserId) return
+    if (!confirm('Are you sure you want to clear this chat? This cannot be undone.')) return
+    
+    try {
+      await socialApi.deleteChat(activeUserId)
+      setMessages([])
+      fetchConversations()
+      toast.success('Chat cleared')
+    } catch {
+      toast.error('Failed to clear chat')
+    }
+  }
+
   const handleSend = async (e) => {
     e.preventDefault()
     if (!text.trim() || !activeUserId) return
@@ -81,8 +116,10 @@ export default function Messages() {
     setText('') // optimistic clear
     setSending(true)
     try {
-      const { data } = await socialApi.sendMessage(activeUserId, msgText)
-      setMessages(prev => [...prev, data.message])
+      const secret = [user._id, activeUserId].sort().join('_') + '_secret'
+      const encryptedText = CryptoJS.AES.encrypt(msgText, secret).toString()
+      const { data } = await socialApi.sendMessage(activeUserId, encryptedText)
+      setMessages(prev => [...prev, { ...data.message, text: msgText }])
       scrollToBottom()
       fetchConversations() // update sidebar
     } catch {
@@ -181,6 +218,15 @@ export default function Messages() {
                     <p className="meta-text text-muted-foreground">{activeUser?.role || 'User'}</p>
                   </div>
                 </Link>
+                <div className="ml-auto">
+                  <button 
+                    onClick={handleClearChat}
+                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors"
+                    title="Clear Chat"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Messages */}
