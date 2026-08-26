@@ -183,7 +183,9 @@ export const markAttendance = async (req, res) => {
     reg.attendedAt = new Date()
     await reg.save()
 
-    await User.findByIdAndUpdate(reg.user, { $inc: { eventsAttended: 1 } })
+    await User.findByIdAndUpdate(reg.user, {
+      $inc: { eventsAttended: 1, certificatesEarned: 1 },
+    })
 
     res.json({ success: true, message: 'Attendance marked', registration: reg })
   } catch (err) {

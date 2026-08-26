@@ -4,6 +4,7 @@ import { Route, BrowserRouter as Router, Routes, useLocation } from 'react-route
 import { Toaster } from 'sonner'
 import Footer from '@/components/layout/Footer'
 import Navbar from '@/components/layout/Navbar'
+import ProtectedRoute from '@/components/layout/ProtectedRoute'
 import { AuthProvider } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
 const Home               = lazy(() => import('@/pages/Home'))
@@ -63,10 +64,10 @@ function AnimatedRoutes() {
             <Route path="/gallery"             element={<Gallery />} />
             <Route path="/login"               element={<Login />} />
             <Route path="/register"            element={<Register />} />
-            <Route path="/dashboard"           element={<Dashboard />} />
-            <Route path="/dashboard/:tab"      element={<Dashboard />} />
-            <Route path="/admin"               element={<AdminDashboard />} />
-            <Route path="/organizer"           element={<OrganizerDashboard />} />
+            <Route path="/dashboard"           element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/dashboard/:tab"      element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/admin"               element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/organizer"           element={<ProtectedRoute role="organizer"><OrganizerDashboard /></ProtectedRoute>} />
             <Route path="/about"               element={<About />} />
             <Route path="/contact"             element={<Contact />} />
             <Route path="/sitemap"             element={<Sitemap />} />

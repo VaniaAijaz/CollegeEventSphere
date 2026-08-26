@@ -1,7 +1,6 @@
 import dns from 'node:dns'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
@@ -16,11 +15,11 @@ import galleryRoutes      from './routes/galleryRoutes.js'
 import adminRoutes        from './routes/adminRoutes.js'
 import boothRoutes        from './routes/boothRoutes.js'
 
-dns.setServers(['8.8.8.8'])
-
-// ── __dirname setup (ES modules mein __dirname available nahi hota) ──────
+// ── __dirname setup (ES modules) ─────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url)
 const __dirname  = path.dirname(__filename)
+
+dns.setServers(['8.8.8.8'])
 
 // ── Connect DB ────────────────────────────────────────────────────────────
 connectDB()

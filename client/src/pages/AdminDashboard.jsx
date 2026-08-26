@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion'
-import { CheckCircle2, Clock, LayoutGrid, Loader2, Shield, Trash2, Users, XCircle, Bell, Settings, ImagePlus, Upload } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { CheckCircle2, Clock, LayoutGrid, Loader2, Shield, Trash2, Users, XCircle, Bell, Settings, ImagePlus, Upload, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -8,7 +8,66 @@ import { adminApi, eventsApi, galleryApi } from '@/lib/api'
 import { CATEGORIES } from '@/data/mockData'
 import { cn } from '@/lib/utils'
 
+const ALL_ROLES = ['participant', 'organizer', 'admin']
+
 const TABS = ['Overview', 'Events', 'Users', 'Gallery', 'Announcements']
+
+function TargetRolesModal({ onClose, onSend, message }) {
+  const [selected, setSelected] = useState(['participant', 'organizer', 'admin'])
+  const [sending, setSending] = useState(false)
+  const toggle = (role) =>
+    setSelected(s => s.includes(role) ? s.filter(r => r !== role) : [...s, role])
+  const handleSend = async () => {
+    if (!selected.length) return toast.error('Select at least one role')
+    setSending(true)
+    await onSend(selected)
+    setSending(false)
+    onClose()
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+        className="w-full max-w-sm bg-card brut-box p-6 space-y-5"
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="font-black text-lg">Target Roles</h3>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="text-xs font-semibold text-muted-foreground">
+          Send announcement only to selected roles:
+        </p>
+        <div className="space-y-3">
+          {ALL_ROLES.map(role => (
+            <label key={role} className="flex items-center gap-3 cursor-pointer group">
+              <div
+                onClick={() => toggle(role)}
+                className={cn(
+                  'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all',
+                  selected.includes(role)
+                    ? 'bg-foreground border-foreground'
+                    : 'border-border dark:border-border-strong bg-background'
+                )}
+              >
+                {selected.includes(role) && <CheckCircle2 className="w-3 h-3 text-background" />}
+              </div>
+              <span className="text-sm font-black capitalize">{role}</span>
+            </label>
+          ))}
+        </div>
+        <button
+          onClick={handleSend} disabled={sending || !selected.length}
+          className="w-full btn-brut btn-brut-primary justify-center"
+        >
+          {sending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Bell className="w-4 h-4 mr-2" />}
+          {sending ? 'Sending...' : `Send to ${selected.join(', ')}`}
+        </button>
+      </motion.div>
+    </div>
+  )
+}
 function StatCard({ label, value, icon: Icon, accentClass, bgClass, i }) {
   return (
     <motion.div
@@ -33,6 +92,7 @@ export default function AdminDashboard() {
   const [allEvents,  setAllEvents]  = useState([])
   const [users,      setUsers]      = useState([])
   const [announce,   setAnnounce]   = useState('')
+  const [roleModal,  setRoleModal]  = useState(false)
   // ── Gallery state ──────────────────────────────────────────────────────
   const [galleryItems,   setGalleryItems]   = useState([])
   const [galleryLoading, setGalleryLoading] = useState(false)
@@ -98,9 +158,9 @@ export default function AdminDashboard() {
     setUsers(u => u.map(usr => usr._id === id ? data.user : usr))
     toast.success('User status updated')
   }
-  const sendAnnounce = async () => {
-    if (!announce.trim()) return
-    const { data } = await adminApi.sendAnnounce(announce)
+  const sendAnnounce = async (roles) => {
+    if (!announce.trim()) { toast.error('Type a message first'); return }
+    const { data } = await adminApi.sendAnnounce(announce, roles)
     toast.success(`Announcement sent to ${data.sent} users`)
     setAnnounce('')
   }
@@ -396,12 +456,12 @@ export default function AdminDashboard() {
                 />
               </div>
               <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                <button onClick={sendAnnounce}
+                <button onClick={() => sendAnnounce(['participant', 'organizer', 'admin'])}
                   className="btn-brut btn-brut-primary flex-1 justify-center"
                 >
                   <Bell className="w-4 h-4 mr-2" /> Send to All Users
                 </button>
-                <button onClick={() => toast.info('Targeted messaging coming soon!')}
+                <button onClick={() => { if (!announce.trim()) { toast.error('Type a message first'); return } setRoleModal(true) }}
                   className="btn-brut flex-[0.7] justify-center bg-muted text-foreground border-border dark:border-border-strong"
                 >
                   <Settings className="w-4 h-4 mr-2" /> Target Roles
@@ -412,5 +472,15 @@ export default function AdminDashboard() {
         )}
       </div>
     </div>
+
+    <AnimatePresence>
+      {roleModal && (
+        <TargetRolesModal
+          onClose={() => setRoleModal(false)}
+          onSend={sendAnnounce}
+        />
+      )}
+    </AnimatePresence>
+  </div>
   )
 }
