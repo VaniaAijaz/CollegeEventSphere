@@ -2,20 +2,26 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Mail, MapPin, MessageSquare, Phone } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import api from '@/lib/api'   // ya jo bhi relative path ho, jaise '../lib/api'
 
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!form.name || !form.email || !form.message) { toast.error('Fill all required fields'); return }
-    setLoading(true)
-    await new Promise(r => setTimeout(r, 800))
+  e.preventDefault()
+  if (!form.name || !form.email || !form.message) { toast.error('Fill all required fields'); return }
+  setLoading(true)
+  try {
+    await api.post('/contact', form)
     toast.success("Message sent! We'll respond within 24 hours.")
     setForm({ name: '', email: '', subject: '', message: '' })
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'Failed to send message')
+  } finally {
     setLoading(false)
   }
+}
 
   const INFO = [
     { icon: MapPin,       label: 'Address',       value: '123 College Avenue, Innovation City, 400001' },
