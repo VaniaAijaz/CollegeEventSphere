@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
-import { adminApi, eventsApi, galleryApi } from '@/lib/api'
+import { adminApi, eventsApi, galleryApi, notificationsApi } from '@/lib/api'
 import { CATEGORIES } from '@/data/mockData'
 import { cn } from '@/lib/utils'
 
@@ -116,13 +116,13 @@ export default function AdminDashboard() {
   }
 
   useEffect(() => {
-    Promise.all([adminApi.getStats(), eventsApi.getAll({ status: 'pending', limit: 50 })])
+    Promise.all([adminApi.getStats(), eventsApi.getAll({ status: 'pending', limit: 50, showPast: true })])
       .then(([s, e]) => { setStats(s.data.stats); setPending(e.data.events) })
       .catch(() => {})
   }, [])
   useEffect(() => {
     if (tab !== 'Events') return
-    eventsApi.getAll({ limit: 50 }).then(({ data }) => setAllEvents(data.events)).catch(() => {})
+    eventsApi.getAll({ limit: 50, showPast: true }).then(({ data }) => setAllEvents(data.events)).catch(() => {})
   }, [tab])
   useEffect(() => {
     if (tab !== 'Users') return
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
   }
   const sendAnnounce = async (roles) => {
     if (!announce.trim()) { toast.error('Type a message first'); return }
-    const { data } = await adminApi.sendAnnounce(announce, roles)
+    const { data } = await notificationsApi.sendAnnounce(announce, roles)
     toast.success(`Announcement sent to ${data.sent} users`)
     setAnnounce('')
   }

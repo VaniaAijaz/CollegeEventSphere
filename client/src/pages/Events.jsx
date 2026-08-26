@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { LayoutGrid, List, Search, SlidersHorizontal, X } from 'lucide-react'
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import EventCard from '@/components/events/EventCard'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -17,7 +18,8 @@ function useDebounce(value, delay = 400) {
 }
 
 export default function Events() {
-  const [search,   setSearch]   = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [search,   setSearch]   = useState(searchParams.get('search') || '')
   const [category, setCategory] = useState('all')
   const [dept,     setDept]     = useState('all')
   const [status,   setStatus]   = useState('all')
@@ -69,7 +71,12 @@ export default function Events() {
   useEffect(() => { setPage(1) }, [debouncedSearch, category, dept, status, sort])
 
   const hasFilters = search || category !== 'all' || dept !== 'all' || status !== 'all'
-  const clearFilters = () => { setSearch(''); setCategory('all'); setDept('all'); setStatus('all') }
+  const clearFilters = () => { setSearch(''); setCategory('all'); setDept('all'); setStatus('all'); setSearchParams({}) }
+
+  useEffect(() => {
+    const q = searchParams.get('search') || ''
+    setSearch(q)
+  }, [searchParams])
 
   return (
     <div className="min-h-screen pt-[72px] bg-background">

@@ -11,9 +11,12 @@ import authRoutes         from './routes/authRoutes.js'
 import eventRoutes        from './routes/eventRoutes.js'
 import registrationRoutes from './routes/registrationRoutes.js'
 import notificationRoutes from './routes/notificationRoutes.js'
+import socialRoutes from './routes/socialRoutes.js'
 import galleryRoutes      from './routes/galleryRoutes.js'
 import adminRoutes        from './routes/adminRoutes.js'
 import boothRoutes        from './routes/boothRoutes.js'
+import chatbotRoutes from './routes/chatbotRoutes.js'
+import captionRoutes from './routes/captionRoutes.js'
 
 // ── __dirname setup (ES modules) ─────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url)
@@ -64,10 +67,12 @@ app.use('/api/auth',          authLimiter, authRoutes)
 app.use('/api/events',        eventRoutes)
 app.use('/api/registrations', registrationRoutes)
 app.use('/api/notifications', notificationRoutes)
+app.use('/api/social',        socialRoutes)
 app.use('/api/gallery',       galleryRoutes)
 app.use('/api/admin',         adminRoutes)
 app.use('/api/booths',        boothRoutes)
-
+app.use('/api/chatbot', chatbotRoutes)
+app.use('/api/captions', captionRoutes)
 // ── Health check ─────────────────────────────────────────────────────────
 app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: Date.now() }))
 

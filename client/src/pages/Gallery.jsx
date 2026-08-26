@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Image, X, ZoomIn } from 'lucide-react'
-import { useState, useEffect, useMemo } from 'react'
+import { X, ZoomIn } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { galleryApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
@@ -29,17 +29,6 @@ export default function Gallery() {
     }
     fetchGallery()
   }, [filter])
-
-  const dynamicCategories = useMemo(() => {
-    // We only have the categories for currently loaded items, 
-    // ideally the backend would supply this, but for now we extract from current view 
-    // or just rely on what is loaded. Actually, if filtered, it only shows that category.
-    // So we need to keep a global list if we want it dynamic. For now we just use the loaded ones 
-    // unless we had a separate fetch. We'll use a static array if it's empty, otherwise extract.
-    // Since we don't want hardcoded CATEGORIES array, we will just use basic event categories as a fallback.
-    const cats = new Set(gallery.map(g => g.category).filter(Boolean))
-    return Array.from(cats).sort()
-  }, [gallery])
 
   // fallback categories if gallery is filtered or empty
   const filterTabs = ['all', 'Technical', 'Cultural', 'Sports', 'Workshop', 'Seminar', 'Annual Day', 'Intercollegiate']

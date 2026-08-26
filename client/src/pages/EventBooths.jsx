@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { ArrowLeft, Ban, CheckCircle2, LayoutGrid, Loader2, Pencil, Plus, Trash2, X, Zap } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
@@ -310,15 +310,15 @@ export default function EventBooths() {
   const [bulkSubmitting, setBulkSubmitting] = useState(false)
   const [actionLoading, setActionLoading] = useState(null)
 
-  const fetchBooths = () => {
+  const fetchBooths = useCallback(() => {
     setLoading(true)
     boothsApi.getByEvent(id)
       .then(({ data }) => { setEvent(data.event); setBooths(data.booths) })
       .catch((err) => toast.error(err.response?.data?.message || 'Failed to load booths'))
       .finally(() => setLoading(false))
-  }
+  }, [id])
 
-  useEffect(() => { fetchBooths() }, [id])
+  useEffect(() => { fetchBooths() }, [fetchBooths])
 
   if (!isAuth || !['admin', 'organizer'].includes(user?.role)) return <Navigate to="/login" replace />
   const openCreate = () => { setEditingBooth(null); setFormData(EMPTY_BOOTH); setShowForm(true) }

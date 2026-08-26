@@ -12,6 +12,14 @@ const userSchema = new mongoose.Schema(
     role:       { type: String, enum: ['participant', 'organizer', 'admin'], default: 'participant' },
     avatar:     { type: String },
     isActive:   { type: Boolean, default: true },
+    // Social & Profile
+    bio:        { type: String, maxlength: 300 },
+    interests:  [{ type: String, trim: true }],
+    followers:  [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    following:  [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    github:     { type: String, trim: true },
+    linkedin:   { type: String, trim: true },
+
     // stats (denormalised for fast dashboard reads)
     eventsRegistered: { type: Number, default: 0 },
     eventsAttended:   { type: Number, default: 0 },

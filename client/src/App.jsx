@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import Footer from '@/components/layout/Footer'
@@ -7,6 +7,9 @@ import Navbar from '@/components/layout/Navbar'
 import ProtectedRoute from '@/components/layout/ProtectedRoute'
 import { AuthProvider } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
+import ChatbotWidget from '@/components/chatbot/ChatbotWidget'
+
+
 const Home               = lazy(() => import('@/pages/Home'))
 const Events             = lazy(() => import('@/pages/Events'))
 const EventDetail        = lazy(() => import('@/pages/EventDetail'))
@@ -20,6 +23,8 @@ const OrganizerDashboard = lazy(() => import('@/pages/OrganizerDashboard'))
 const About              = lazy(() => import('@/pages/About'))
 const Contact            = lazy(() => import('@/pages/Contact'))
 const Sitemap            = lazy(() => import('@/pages/Sitemap'))
+const Profile            = lazy(() => import('@/pages/Profile'))
+const Messages           = lazy(() => import('@/pages/Messages'))
 function PageLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -42,6 +47,14 @@ const pageVariants = {
   initial: { opacity: 0, y: 10 },
   enter:   { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
   exit:    { opacity: 0, y: -8, transition: { duration: 0.2, ease: 'easeIn' } },
+}
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+  return null
 }
 function AnimatedRoutes() {
   const location = useLocation()
@@ -68,6 +81,8 @@ function AnimatedRoutes() {
             <Route path="/dashboard/:tab"      element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/admin"               element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/organizer"           element={<ProtectedRoute role="organizer"><OrganizerDashboard /></ProtectedRoute>} />
+            <Route path="/profile/:id"         element={<Profile />} />
+            <Route path="/messages"            element={<ProtectedRoute><Messages /></ProtectedRoute>} />
             <Route path="/about"               element={<About />} />
             <Route path="/contact"             element={<Contact />} />
             <Route path="/sitemap"             element={<Sitemap />} />
@@ -93,12 +108,14 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <Router>
+          <ScrollToTop />
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <main className="flex-1 flex flex-col">
               <AnimatedRoutes />
             </main>
             <Footer />
+            <ChatbotWidget />
           </div>
           <Toaster
             position="top-right"

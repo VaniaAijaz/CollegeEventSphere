@@ -71,7 +71,7 @@ export const getMe = async (req, res) => {
 // PATCH /api/auth/update-profile
 export const updateProfile = async (req, res) => {
   try {
-    const allowed = ['name', 'phone', 'department']
+    const allowed = ['name', 'phone', 'department', 'bio', 'interests', 'github', 'linkedin']
     const updates = {}
     allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k] })
 

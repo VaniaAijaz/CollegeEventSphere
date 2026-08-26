@@ -70,10 +70,10 @@ export default function About() {
                 and get recognized for their participation.
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-border/50 hairline-border">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {VALUES.map(({ icon: Icon, title, desc }, i) => (
                 <Reveal key={title} delay={i * 0.08} className="bg-background">
-                  <div className="p-8 h-full flex flex-col items-start gap-6 hover:bg-secondary/10 transition-colors">
+                  <div className="p-8 h-full flex flex-col items-start gap-6 editorial-frame hover:bg-secondary/10 transition-colors">
                     <div className="w-12 h-12 bg-foreground text-background flex items-center justify-center">
                       <Icon className="w-5 h-5" />
                     </div>
@@ -116,12 +116,12 @@ export default function About() {
           <p className="meta-text text-muted-foreground mb-6">People</p>
           <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter">Meet the team</h2>
         </Reveal>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-border/50 hairline-border">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {TEAM.map(({ name, role, avatar }, i) => (
             <Reveal key={name} delay={i * 0.1} className="bg-background">
-              <div className="p-10 text-center group hover:bg-secondary/10 transition-colors">
+              <div className="p-10 text-center editorial-frame hover:bg-secondary/10 transition-colors">
                 <div className="relative w-32 h-32 mx-auto mb-8">
-                  <img src={avatar} alt={name} className="relative w-32 h-32 bg-muted hairline-border object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                  <img src={avatar} alt={name} className="relative w-32 h-32 bg-muted editorial-frame object-cover" />
                 </div>
                 <div className="font-extrabold text-2xl mb-2">{name}</div>
                 <div className="meta-text text-muted-foreground">{role}</div>

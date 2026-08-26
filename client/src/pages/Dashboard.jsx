@@ -40,7 +40,15 @@ export default function Dashboard() {
   const [unread,        setUnread]        = useState(0)
   const [loadingReg,    setLoadingReg]    = useState(false)
   const [loadingNotif,  setLoadingNotif]  = useState(false)
-  const [profileForm,   setProfileForm]   = useState({ name: user?.name || '', phone: user?.phone || '' })
+  const [profileForm,   setProfileForm]   = useState({
+    name: user?.name || '',
+    phone: user?.phone || '',
+    department: user?.department || '',
+    bio: user?.bio || '',
+    interests: user?.interests ? user.interests.join(', ') : '',
+    github: user?.github || '',
+    linkedin: user?.linkedin || ''
+  })
   const [saving,        setSaving]        = useState(false)
   const [activeTicket,  setActiveTicket]  = useState(null)
   const navigate = useNavigate()
@@ -65,7 +73,15 @@ export default function Dashboard() {
 
   const handleLogout = async () => { await logout(); toast.success('Signed out'); navigate('/') }
   const markAllRead  = async () => { await notificationsApi.markAllRead(); setNotifications(n => n.map(x => ({ ...x, read: true }))); setUnread(0) }
-  const handleSave   = async () => { setSaving(true); const r = await updateProfile(profileForm); setSaving(false); r.success ? toast.success('Profile updated!') : toast.error(r.message) }
+  const handleSave   = async () => {
+    setSaving(true)
+    const payload = { ...profileForm }
+    if (payload.interests) payload.interests = payload.interests.split(',').map(s => s.trim())
+    else payload.interests = []
+    const r = await updateProfile(payload)
+    setSaving(false)
+    if (r.success) { toast.success('Profile updated!') } else { toast.error(r.message) }
+  }
 
   const handleDownloadCertificate = (reg) => {
     try {
@@ -369,6 +385,11 @@ export default function Dashboard() {
                     {[
                       { label: 'Full Name', key: 'name',  placeholder: 'Your full name' },
                       { label: 'Phone',     key: 'phone', placeholder: 'Phone Number' },
+                      { label: 'Department',key: 'department', placeholder: 'Computer Science' },
+                      { label: 'Bio',       key: 'bio', placeholder: 'A short bio' },
+                      { label: 'Interests', key: 'interests', placeholder: 'AI, Web Dev (comma separated)' },
+                      { label: 'GitHub',    key: 'github', placeholder: 'github.com/username' },
+                      { label: 'LinkedIn',  key: 'linkedin', placeholder: 'linkedin.com/in/username' },
                     ].map(({ label, key, placeholder }) => (
                       <div key={key} className="space-y-3">
                         <label className="meta-text text-muted-foreground">{label}</label>
