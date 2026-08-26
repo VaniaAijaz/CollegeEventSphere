@@ -22,18 +22,18 @@ const Contact            = lazy(() => import('@/pages/Contact'))
 const Sitemap            = lazy(() => import('@/pages/Sitemap'))
 function PageLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <motion.div
         animate={{ opacity: [0.4, 1, 0.4] }}
         transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-        className="flex items-center gap-3"
+        className="flex items-center gap-4"
       >
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
-          <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+        <div className="w-10 h-10 bg-foreground text-background flex items-center justify-center">
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
             <path d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
         </div>
-        <span className="font-semibold text-sm text-muted-foreground tracking-tight">EventSphere</span>
+        <span className="font-extrabold text-xl tracking-tighter">EventSphere</span>
       </motion.div>
     </div>
   )

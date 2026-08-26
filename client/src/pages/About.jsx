@@ -38,48 +38,48 @@ export default function About() {
   return (
     <div className="min-h-screen pt-[72px] bg-background">
       {/* Hero */}
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 pt-20 pb-20">
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 pt-24 pb-24">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-          <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">About</p>
-          <h1 className="text-6xl sm:text-8xl font-black tracking-tight leading-[0.95] mb-8 max-w-3xl">
+          <p className="meta-text text-muted-foreground mb-6">About EventSphere</p>
+          <h1 className="text-6xl md:text-8xl lg:text-9xl font-extrabold tracking-tighter leading-[0.95] mb-12 max-w-5xl">
             Reimagining<br />
-            <span className="text-primary bg-primary/10 px-2 py-1 rounded-2xl border-4 border-primary inline-block mt-2">Campus Events.</span>
+            <span className="text-foreground">Campus Events.</span>
           </h1>
-          <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl font-semibold">
+          <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-3xl font-medium">
             EventSphere was built for Aptech TechWiz 6 to solve the real problem of fragmented college event communication.
             One platform. Every event. Zero confusion.
           </p>
         </motion.div>
       </div>
 
-      <div className="w-full border-t-4 border-border dark:border-border-strong border-dashed my-10" />
+      <div className="w-full hairline-t" />
 
       {/* Mission */}
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 py-20">
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 py-32">
         <Reveal>
-          <div className="grid md:grid-cols-2 gap-16 items-start">
+          <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-start">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4">Mission</p>
-              <h2 className="text-4xl font-black mb-6">Why we built this</h2>
-              <p className="text-muted-foreground font-semibold leading-relaxed mb-6 text-lg">
+              <p className="meta-text text-muted-foreground mb-6">Mission</p>
+              <h2 className="text-4xl md:text-5xl font-extrabold mb-8 tracking-tighter">Why we built this</h2>
+              <p className="text-muted-foreground font-medium leading-relaxed mb-6 text-lg md:text-xl">
                 To create a centralized, accessible, and engaging platform that connects every student
                 with the events happening at their college — from technical fests to cultural nights.
               </p>
-              <p className="text-muted-foreground font-semibold leading-relaxed text-lg">
+              <p className="text-muted-foreground font-medium leading-relaxed text-lg md:text-xl">
                 We believe every student deserves to know what's happening on campus, register seamlessly,
                 and get recognized for their participation.
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-border/50 hairline-border">
               {VALUES.map(({ icon: Icon, title, desc }, i) => (
-                <Reveal key={title} delay={i * 0.08}>
-                  <div className="p-6 brut-box bg-card h-full flex flex-col items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
-                      <Icon className="w-6 h-6 text-primary" />
+                <Reveal key={title} delay={i * 0.08} className="bg-background">
+                  <div className="p-8 h-full flex flex-col items-start gap-6 hover:bg-secondary/10 transition-colors">
+                    <div className="w-12 h-12 bg-foreground text-background flex items-center justify-center">
+                      <Icon className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="font-black text-lg mb-2">{title}</h3>
-                      <p className="text-sm font-semibold text-muted-foreground leading-relaxed">{desc}</p>
+                      <h3 className="font-extrabold text-xl mb-3">{title}</h3>
+                      <p className="text-base font-medium text-muted-foreground leading-relaxed">{desc}</p>
                     </div>
                   </div>
                 </Reveal>
@@ -89,18 +89,18 @@ export default function About() {
         </Reveal>
       </div>
 
-      <div className="w-full border-t-4 border-border dark:border-border-strong border-dashed my-10" />
+      <div className="w-full hairline-t" />
 
       {/* Tech Stack */}
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 py-20">
-        <Reveal className="mb-12">
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4">Technology</p>
-          <h2 className="text-4xl font-black">Built with modern tech</h2>
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 py-32">
+        <Reveal className="mb-16">
+          <p className="meta-text text-muted-foreground mb-6">Technology</p>
+          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter">Built with modern tech</h2>
         </Reveal>
         <div className="flex flex-wrap gap-4">
           {STACK.map((tech, i) => (
             <Reveal key={tech} delay={i * 0.04}>
-              <span className="px-5 py-2.5 rounded-xl border-2 border-border dark:border-border-strong bg-card text-sm font-black uppercase tracking-widest hover:bg-muted hover:-translate-y-1 hover:shadow-[4px_4px_0px_var(--border)] dark:hover:shadow-[4px_4px_0px_var(--border-strong)] transition-all cursor-default block">
+              <span className="px-6 py-3 editorial-frame text-sm font-bold uppercase tracking-widest hover:bg-foreground hover:text-background transition-colors cursor-default block">
                 {tech}
               </span>
             </Reveal>
@@ -108,24 +108,23 @@ export default function About() {
         </div>
       </div>
 
-      <div className="w-full border-t-4 border-border dark:border-border-strong border-dashed my-10" />
+      <div className="w-full hairline-t" />
 
       {/* Team */}
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 py-20">
-        <Reveal className="mb-14">
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4">People</p>
-          <h2 className="text-4xl font-black">Meet the team</h2>
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 py-32">
+        <Reveal className="mb-16">
+          <p className="meta-text text-muted-foreground mb-6">People</p>
+          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter">Meet the team</h2>
         </Reveal>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-border/50 hairline-border">
           {TEAM.map(({ name, role, avatar }, i) => (
-            <Reveal key={name} delay={i * 0.1}>
-              <div className="p-8 brut-box bg-card text-center group">
-                <div className="relative w-24 h-24 mx-auto mb-6">
-                  <div className="absolute inset-0 bg-primary translate-x-2 translate-y-2 rounded-2xl" />
-                  <img src={avatar} alt={name} className="relative w-24 h-24 rounded-2xl bg-muted border-2 border-border dark:border-border-strong z-10 group-hover:-translate-y-1 group-hover:-translate-x-1 transition-transform" />
+            <Reveal key={name} delay={i * 0.1} className="bg-background">
+              <div className="p-10 text-center group hover:bg-secondary/10 transition-colors">
+                <div className="relative w-32 h-32 mx-auto mb-8">
+                  <img src={avatar} alt={name} className="relative w-32 h-32 bg-muted hairline-border object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                 </div>
-                <div className="font-black text-xl mb-1">{name}</div>
-                <div className="text-[10px] font-black uppercase tracking-widest text-primary">{role}</div>
+                <div className="font-extrabold text-2xl mb-2">{name}</div>
+                <div className="meta-text text-muted-foreground">{role}</div>
               </div>
             </Reveal>
           ))}
@@ -133,18 +132,18 @@ export default function About() {
       </div>
 
       {/* CTA */}
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 pb-32 mt-10">
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 pb-32 mt-12">
         <Reveal>
-          <div className="brut-box bg-primary text-primary-foreground p-10 sm:p-14 flex flex-col sm:flex-row items-center gap-8 justify-between relative overflow-hidden">
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
+          <div className="editorial-frame bg-foreground text-background p-12 sm:p-20 flex flex-col sm:flex-row items-center gap-10 justify-between relative overflow-hidden">
+            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-10 mix-blend-luminosity" />
             <div className="relative z-10 text-center sm:text-left">
-              <h2 className="text-3xl sm:text-5xl font-black tracking-tight mb-4">Join EventSphere Today</h2>
-              <p className="text-primary-foreground/80 font-semibold text-lg max-w-xl">Be part of the community. Register for events. Get certified.</p>
+              <h2 className="text-4xl md:text-6xl font-extrabold tracking-tighter mb-6">Join EventSphere Today</h2>
+              <p className="text-background/80 font-medium text-xl max-w-xl">Be part of the community. Register for events. Get certified.</p>
             </div>
             <Link to="/register"
-              className="btn-brut relative z-10 bg-background text-foreground hover:bg-muted border-border dark:border-border-strong text-sm h-14 px-8"
+              className="btn-editorial bg-background text-foreground hover:bg-muted h-16 px-10 relative z-10 shrink-0"
             >
-              Create Free Account <ArrowRight className="w-5 h-5 ml-2" />
+              Create Free Account <ArrowRight className="w-5 h-5 ml-3" />
             </Link>
           </div>
         </Reveal>

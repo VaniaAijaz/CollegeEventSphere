@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 
 const SITEMAP_DATA = [
   {
-    title: 'Public Pages', icon: Home, color: 'text-blue-500 bg-blue-500/10',
+    title: 'Public Pages', icon: Home,
     links: [
       { to: '/', label: 'Home', desc: 'Landing page with featured events' },
       { to: '/events', label: 'Browse Events', desc: 'All events with filters and search' },
@@ -14,14 +14,14 @@ const SITEMAP_DATA = [
     ]
   },
   {
-    title: 'Authentication', icon: Shield, color: 'text-violet-500 bg-violet-500/10',
+    title: 'Authentication', icon: Shield,
     links: [
       { to: '/login', label: 'Sign In', desc: 'Login with email and password' },
       { to: '/register', label: 'Register', desc: 'Create a new student account' },
     ]
   },
   {
-    title: 'Student Dashboard', icon: User, color: 'text-emerald-500 bg-emerald-500/10',
+    title: 'Student Dashboard', icon: User,
     links: [
       { to: '/dashboard', label: 'Overview', desc: 'Activity summary and quick stats' },
       { to: '/dashboard', label: 'My Events', desc: 'Registered events and history' },
@@ -30,7 +30,7 @@ const SITEMAP_DATA = [
     ]
   },
   {
-    title: 'Organizer Panel', icon: Calendar, color: 'text-amber-500 bg-amber-500/10',
+    title: 'Organizer Panel', icon: Calendar,
     links: [
       { to: '/organizer', label: 'Dashboard', desc: 'Event metrics and overview' },
       { to: '/organizer', label: 'Manage Events', desc: 'Create, edit, and manage events' },
@@ -38,7 +38,7 @@ const SITEMAP_DATA = [
     ]
   },
   {
-    title: 'Admin Panel', icon: Shield, color: 'text-red-500 bg-red-500/10',
+    title: 'Admin Panel', icon: Shield,
     links: [
       { to: '/admin', label: 'Admin Dashboard', desc: 'System-wide analytics and alerts' },
       { to: '/admin', label: 'Event Approvals', desc: 'Approve or reject organizer events' },
@@ -50,36 +50,36 @@ const SITEMAP_DATA = [
 
 export default function Sitemap() {
   return (
-    <div className="min-h-screen pt-[60px]">
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 pt-16 pb-24">
+    <div className="min-h-screen pt-[72px] bg-background">
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 pt-24 pb-32">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          className="mb-14"
+          className="mb-20"
         >
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Navigation</p>
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tight">Sitemap</h1>
+          <p className="meta-text text-muted-foreground mb-6">Navigation</p>
+          <h1 className="text-6xl md:text-8xl lg:text-9xl font-extrabold tracking-tighter mb-8">Sitemap</h1>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {SITEMAP_DATA.map(({ title, icon: Icon, color, links }, i) => (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-border/50 hairline-border">
+          {SITEMAP_DATA.map(({ title, icon: Icon, links }, i) => (
             <motion.div key={title}
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08, duration: 0.45 }}
-              className="p-6 rounded-2xl border border-border bg-card"
+              className="p-10 bg-background"
             >
-              <div className="flex items-center gap-3 mb-5">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
-                  <Icon className="w-4 h-4" />
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 bg-foreground text-background flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-5 h-5" />
                 </div>
-                <h2 className="font-bold text-[15px]">{title}</h2>
+                <h2 className="font-extrabold text-2xl tracking-tighter">{title}</h2>
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {links.map(({ to, label, desc }) => (
                   <Link key={label} to={to}
-                    className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-foreground/5 transition-colors group"
+                    className="flex items-start gap-4 p-4 hover:bg-secondary/10 transition-colors group"
                   >
-                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground mt-0.5 flex-shrink-0 transition-transform group-hover:translate-x-0.5" />
+                    <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0 transition-transform group-hover:translate-x-1" />
                     <div>
-                      <div className="text-sm font-medium group-hover:text-primary transition-colors">{label}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">{desc}</div>
+                      <div className="text-base font-bold group-hover:text-foreground transition-colors">{label}</div>
+                      <div className="text-sm text-muted-foreground mt-1 font-medium">{desc}</div>
                     </div>
                   </Link>
                 ))}
