@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import dns from 'node:dns'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -16,6 +17,7 @@ import adminRoutes        from './routes/adminRoutes.js'
 import boothRoutes        from './routes/boothRoutes.js'
 import chatbotRoutes from './routes/chatbotRoutes.js'
 import captionRoutes from './routes/captionRoutes.js'
+import contactRoutes from './routes/contactRoutes.js'
 
 // ── __dirname setup (ES modules) ─────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url)
@@ -71,6 +73,7 @@ app.use('/api/admin',         adminRoutes)
 app.use('/api/booths',        boothRoutes)
 app.use('/api/chatbot', chatbotRoutes)
 app.use('/api/captions', captionRoutes)
+app.use('/api/contact', contactRoutes)
 // ── Health check ─────────────────────────────────────────────────────────
 app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: Date.now() }))
 
