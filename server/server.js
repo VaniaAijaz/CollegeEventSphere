@@ -1,11 +1,6 @@
-<<<<<<< HEAD
 import dns from 'node:dns'
 import path from 'path'
 import { fileURLToPath } from 'url'
-
-=======
-import dns from 'node:dns';
->>>>>>> a1b224a16c012bff4faaa27533e2a107e6342f79
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
@@ -21,8 +16,6 @@ import galleryRoutes      from './routes/galleryRoutes.js'
 import adminRoutes        from './routes/adminRoutes.js'
 import boothRoutes        from './routes/boothRoutes.js'
 
-dns.setServers(['8.8.8.8']);
-
 dns.setServers(['8.8.8.8'])
 
 // ── __dirname setup (ES modules mein __dirname available nahi hota) ──────
@@ -35,14 +28,9 @@ connectDB()
 const app = express()
 
 // ── Security middleware ───────────────────────────────────────────────────
-<<<<<<< HEAD
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' }, // taake images frontend (different port) pe load ho sakein
+  crossOriginResourcePolicy: { policy: 'cross-origin' }, // allows images to load on frontend port
 }))
-
-=======
-app.use(helmet())
->>>>>>> a1b224a16c012bff4faaa27533e2a107e6342f79
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,

@@ -7,8 +7,6 @@ import {
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/AuthContext'
 import { eventsApi, registrationsApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -30,16 +28,18 @@ export default function EventDetail() {
   }, [id])
 
   if (loading) return (
-    <div className="min-h-screen pt-24 flex items-center justify-center">
-      <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+    <div className="min-h-screen pt-[72px] flex items-center justify-center bg-background">
+      <Loader2 className="w-10 h-10 animate-spin text-primary" />
     </div>
   )
 
   if (!event) return (
-    <div className="min-h-screen pt-24 flex flex-col items-center justify-center">
-      <div className="text-6xl mb-4">🔍</div>
-      <h2 className="text-2xl font-bold mb-2">Event Not Found</h2>
-      <Button asChild variant="outline"><Link to="/events"><ArrowLeft className="w-4 h-4 mr-2" />Back to Events</Link></Button>
+    <div className="min-h-screen pt-[72px] flex flex-col items-center justify-center bg-background">
+      <div className="text-6xl mb-6">🔍</div>
+      <h2 className="text-3xl font-black mb-4">Event Not Found</h2>
+      <Link to="/events" className="btn-brut">
+        <ArrowLeft className="w-4 h-4" /> Back to Events
+      </Link>
     </div>
   )
 
@@ -85,63 +85,67 @@ export default function EventDetail() {
   }
 
   return (
-    <div className="min-h-screen pt-16">
+    <div className="min-h-screen pt-[72px] bg-background">
       {/* Hero */}
-      <div className="relative h-72 sm:h-96 overflow-hidden">
-        <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+      <div className="relative h-72 sm:h-96 border-b-2 border-border dark:border-border-strong overflow-hidden bg-primary/20">
+        {event.image ? (
+          <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full dot-grid opacity-[0.2]" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
         <div className="absolute top-6 left-6">
-          <Button variant="ghost" size="sm" asChild className="glass text-foreground">
-            <Link to="/events"><ArrowLeft className="w-4 h-4 mr-2" />Back</Link>
-          </Button>
+          <Link to="/events" className="btn-brut btn-brut-dark text-xs px-4 py-2">
+            <ArrowLeft className="w-4 h-4" /> Back
+          </Link>
         </div>
         {event.featured && (
           <div className="absolute top-6 right-6">
-            <span className="text-xs font-semibold bg-gradient-to-r from-violet-600 to-purple-600 text-white px-3 py-1.5 rounded-full shadow">
+            <span className="tag bg-accent text-accent-foreground border-border shadow-[2px_2px_0px_var(--border)]">
               ✦ Featured Event
             </span>
           </div>
         )}
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 -mt-16 relative z-10 pb-24">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 -mt-20 relative z-10 pb-24">
+        <div className="grid lg:grid-cols-3 gap-10">
           {/* Main */}
           <div className="lg:col-span-2">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant="default">{event.category}</Badge>
-                <Badge variant={event.status === 'upcoming' ? 'success' : 'secondary'}>{event.status}</Badge>
-                {event.tags?.map(t => <Badge key={t} variant="outline" className="text-xs">{t}</Badge>)}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="brut-box bg-card p-6 sm:p-10 mb-8">
+              <div className="flex flex-wrap gap-2 mb-6">
+                <span className="tag bg-secondary text-secondary-foreground border-border dark:border-border-strong">{event.category}</span>
+                <span className={cn('tag border-border dark:border-border-strong', event.status === 'upcoming' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>{event.status}</span>
+                {event.tags?.map(t => <span key={t} className="tag bg-background text-foreground border-border dark:border-border-strong">{t}</span>)}
               </div>
-              <h1 className="text-3xl sm:text-4xl font-bold mb-4 leading-tight">{event.title}</h1>
+              <h1 className="text-4xl sm:text-5xl font-black mb-8 leading-tight tracking-tight">{event.title}</h1>
 
-              <div className="grid sm:grid-cols-2 gap-3 mb-6">
+              <div className="grid sm:grid-cols-2 gap-4 mb-8">
                 {[
                   { icon: Calendar, label: 'Date',      value: format(new Date(event.date), 'EEEE, MMMM d, yyyy') },
                   { icon: Clock,    label: 'Time',      value: `${event.time} – ${event.endTime}` },
                   { icon: MapPin,   label: 'Venue',     value: event.venue },
                   { icon: Users,    label: 'Organizer', value: event.organizer_name || event.organizer?.name },
                 ].map(({ icon: Icon, label, value }) => (
-                  <div key={label} className="flex items-start gap-3 p-3 rounded-xl bg-muted/50">
-                    <div className="w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center shrink-0">
-                      <Icon className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                  <div key={label} className="flex items-start gap-4 p-4 rounded-xl bg-muted/50 border-2 border-border/10 dark:border-border-strong/10">
+                    <div className="w-10 h-10 rounded-lg bg-card border-2 border-border/20 dark:border-border-strong/20 flex items-center justify-center shrink-0 shadow-sm">
+                      <Icon className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <div className="text-xs text-muted-foreground">{label}</div>
-                      <div className="text-sm font-medium">{value}</div>
+                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">{label}</div>
+                      <div className="text-sm font-semibold">{value}</div>
                     </div>
                   </div>
                 ))}
               </div>
 
               {/* Tabs */}
-              <div className="flex gap-1 p-1 bg-muted rounded-xl mb-6 w-fit">
+              <div className="flex gap-2 mb-8 border-b-2 border-border/10 dark:border-border-strong/10 pb-4">
                 {['details', 'reviews'].map(t => (
                   <button key={t} onClick={() => setTab(t)}
                     className={cn(
-                      'px-5 py-2 rounded-lg text-sm font-medium capitalize transition-all',
-                      tab === t ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'
+                      'px-5 py-2.5 rounded-lg text-sm font-black uppercase tracking-widest transition-all',
+                      tab === t ? 'bg-foreground text-background shadow-[2px_2px_0px_var(--border)] dark:shadow-[2px_2px_0px_var(--border-strong)] border-2 border-border dark:border-border-strong' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     )}
                   >{t}</button>
                 ))}
@@ -149,14 +153,14 @@ export default function EventDetail() {
 
               {tab === 'details' && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key="details">
-                  <h2 className="font-semibold text-lg mb-3">About This Event</h2>
-                  <p className="text-muted-foreground leading-relaxed mb-6">{event.description}</p>
+                  <h2 className="font-black text-2xl mb-4 tracking-tight">About This Event</h2>
+                  <p className="text-foreground/80 font-medium leading-relaxed mb-8 text-lg">{event.description}</p>
                   {event.registrationDeadline && (
-                    <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800">
-                      <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-medium text-sm mb-1">
+                    <div className="p-5 rounded-xl border-2 border-amber-400 bg-amber-100 dark:bg-amber-900/30 dark:border-amber-600 shadow-[2px_2px_0px_theme(colors.amber.400)] dark:shadow-[2px_2px_0px_theme(colors.amber.600)]">
+                      <div className="flex items-center gap-2 text-amber-900 dark:text-amber-400 font-black text-sm uppercase tracking-widest mb-2">
                         <Calendar className="w-4 h-4" /> Registration Deadline
                       </div>
-                      <p className="text-sm text-amber-600 dark:text-amber-500">
+                      <p className="text-sm font-semibold text-amber-800 dark:text-amber-500">
                         {format(new Date(event.registrationDeadline), 'MMMM d, yyyy')} — Register before this date to secure your spot.
                       </p>
                     </div>
@@ -166,18 +170,18 @@ export default function EventDetail() {
 
               {tab === 'reviews' && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key="reviews">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="text-center">
-                      <div className="text-5xl font-bold">{event.rating || '—'}</div>
-                      <div className="flex gap-0.5 justify-center mt-1">
+                  <div className="flex items-center gap-6 mb-8">
+                    <div className="text-center p-6 border-2 border-border dark:border-border-strong rounded-xl bg-card shadow-[4px_4px_0px_var(--border)] dark:shadow-[4px_4px_0px_var(--border-strong)]">
+                      <div className="text-6xl font-black">{event.rating || '—'}</div>
+                      <div className="flex gap-1 justify-center mt-3">
                         {Array.from({ length: 5 }).map((_, i) => (
-                          <Star key={i} className={cn('w-4 h-4', i < Math.round(event.rating) ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground')} />
+                          <Star key={i} className={cn('w-5 h-5', i < Math.round(event.rating) ? 'fill-accent text-accent' : 'text-muted-foreground/30')} />
                         ))}
                       </div>
-                      <div className="text-sm text-muted-foreground mt-1">{event.reviewCount} reviews</div>
+                      <div className="text-xs font-black uppercase tracking-widest text-muted-foreground mt-3">{event.reviewCount} reviews</div>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">Reviews visible after attending the event.</p>
+                  <p className="text-sm font-semibold text-muted-foreground p-4 bg-muted border-2 border-border/10 dark:border-border-strong/10 rounded-xl">Reviews visible after attending the event.</p>
                 </motion.div>
               )}
             </motion.div>
@@ -185,49 +189,49 @@ export default function EventDetail() {
 
           {/* Sidebar */}
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}
-            className="space-y-4"
+            className="space-y-6"
           >
-            <div className="sticky top-24 p-6 rounded-2xl border border-border bg-card shadow-lg space-y-5">
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-muted-foreground flex items-center gap-1.5">
+            <div className="sticky top-24 p-8 brut-box bg-card">
+              <div className="mb-8">
+                <div className="flex justify-between text-xs font-black uppercase tracking-widest mb-3">
+                  <span className="text-muted-foreground flex items-center gap-2">
                     <Users className="w-4 h-4" /> {event.seatsBooked} / {event.totalSeats} registered
                   </span>
-                  <span className={cn('font-semibold', isFull ? 'text-red-500' : remaining <= 20 ? 'text-amber-500' : 'text-green-600')}>
+                  <span className={cn(isFull ? 'text-destructive' : remaining <= 20 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}>
                     {isFull ? 'FULL' : `${remaining} spots left`}
                   </span>
                 </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div className="h-3 bg-muted border-2 border-border dark:border-border-strong rounded-full overflow-hidden">
                   <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1 }}
-                    className={cn('h-full rounded-full', isFull ? 'bg-red-400' : pct >= 80 ? 'bg-amber-400' : 'bg-gradient-to-r from-violet-500 to-purple-500')}
+                    className={cn('h-full', isFull ? 'bg-destructive' : pct >= 80 ? 'bg-amber-400' : 'bg-primary')}
                   />
                 </div>
               </div>
 
               {registered ? (
-                <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+                <div className="p-5 mb-6 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 border-2 border-emerald-500 dark:border-emerald-600 flex items-center gap-4 shadow-[4px_4px_0px_theme(colors.emerald.500)] dark:shadow-[4px_4px_0px_theme(colors.emerald.600)]">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600 dark:text-emerald-400 shrink-0" />
                   <div>
-                    <div className="font-semibold text-green-700 dark:text-green-400 text-sm">You're registered!</div>
-                    <div className="text-xs text-green-600 dark:text-green-500">QR code sent to your email</div>
+                    <div className="font-black text-emerald-800 dark:text-emerald-400 text-sm uppercase tracking-widest mb-1">You're registered!</div>
+                    <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-500">QR code sent to your email</div>
                   </div>
                 </div>
               ) : (
-                <Button variant="gradient" size="lg" className="w-full" onClick={handleRegister}
+                <button className={cn('btn-brut w-full justify-center text-base py-4 mb-6', isFull && !event.waitlistEnabled ? 'bg-muted text-muted-foreground shadow-none' : 'btn-brut-primary')} onClick={handleRegister}
                   disabled={(isFull && !event.waitlistEnabled) || regLoading}
                 >
-                  {regLoading ? <Loader2 className="w-4 h-4 animate-spin" /> :
+                  {regLoading ? <Loader2 className="w-5 h-5 animate-spin" /> :
                     isFull && event.waitlistEnabled ? '+ Join Waitlist' :
                     isFull ? 'Event Full' : 'Register Now'}
-                </Button>
+                </button>
               )}
 
-              <Button variant="outline" size="sm" className="w-full" onClick={downloadICS}>
+              <button className="btn-brut w-full justify-center mb-8" onClick={downloadICS}>
                 <CalendarPlus className="w-4 h-4 mr-2" /> Add to Calendar (.ics)
-              </Button>
+              </button>
 
-              <div>
-                <div className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Share Event</div>
+              <div className="mb-6">
+                <div className="text-[10px] font-black text-muted-foreground mb-3 uppercase tracking-[0.2em]">Share Event</div>
                 <div className="flex gap-2">
                   {[
                     { icon: Share2, label: 'Twitter', href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(event.title)}&url=${encodeURIComponent(shareUrl)}` },
@@ -236,24 +240,24 @@ export default function EventDetail() {
                   ].map(({ icon: Icon, label, href, onClick }) => (
                     href ? (
                       <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-lg border border-border text-xs font-medium hover:bg-accent transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 py-2 px-1 rounded-lg border-2 border-border dark:border-border-strong text-xs font-bold hover:bg-foreground hover:text-background transition-colors"
                       >
-                        <Icon className="w-3.5 h-3.5" /> {label}
+                        <Icon className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{label}</span>
                       </a>
                     ) : (
                       <button key={label} onClick={onClick}
-                        className="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-lg border border-border text-xs font-medium hover:bg-accent transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 py-2 px-1 rounded-lg border-2 border-border dark:border-border-strong text-xs font-bold hover:bg-foreground hover:text-background transition-colors"
                       >
-                        <Icon className="w-3.5 h-3.5" /> {label}
+                        <Icon className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{label}</span>
                       </button>
                     )
                   ))}
                 </div>
               </div>
 
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-100 dark:border-violet-800">
-                <Award className="w-4 h-4 text-violet-600 dark:text-violet-400 mt-0.5 shrink-0" />
-                <p className="text-xs text-violet-700 dark:text-violet-300 leading-relaxed">
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-accent/10 border-2 border-accent">
+                <Award className="w-5 h-5 text-accent mt-0.5 shrink-0" />
+                <p className="text-xs font-bold text-foreground/80 leading-relaxed">
                   Participation certificate available after event attendance verification.
                 </p>
               </div>

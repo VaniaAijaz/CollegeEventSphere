@@ -1,0 +1,20 @@
+{
+  "name": "college-eventsphere-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CollegeEventSphere monorepo root - start server and client together",
+  "scripts": {
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"cyan,magenta\" \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "install:server": "npm install --prefix server",
+    "install:client": "npm install --prefix client",
+    "install:all": "npm install && npm run install:server && npm run install:client",
+    "build": "npm run build --prefix client",
+    "seed": "node server/scripts/seed.js",
+    "start": "npm run start --prefix server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

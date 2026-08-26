@@ -5,7 +5,6 @@ import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
 import { cn } from '@/lib/utils'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 const NAV_LINKS = [
   { to: '/events',  label: 'Events'  },
@@ -17,25 +16,17 @@ const NAV_LINKS = [
 export default function Navbar() {
   const { user, logout, isAuth } = useAuth()
   const { theme, toggle } = useTheme()
-  const [scrolled,    setScrolled]    = useState(false)
-  const [mobileOpen,  setMobileOpen]  = useState(false)
-  const [userOpen,    setUserOpen]    = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [userOpen,   setUserOpen]   = useState(false)
   const location = useLocation()
-  const dropRef = useRef(null)
-
-  useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 30)
-    window.addEventListener('scroll', handler, { passive: true })
-    return () => window.removeEventListener('scroll', handler)
-  }, [])
+  const dropRef  = useRef(null)
 
   useEffect(() => { setMobileOpen(false); setUserOpen(false) }, [location.pathname])
 
-  // close dropdown on outside click
   useEffect(() => {
-    const handler = (e) => { if (dropRef.current && !dropRef.current.contains(e.target)) setUserOpen(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    const h = (e) => { if (dropRef.current && !dropRef.current.contains(e.target)) setUserOpen(false) }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
   }, [])
 
   const dashLink = () => {
@@ -46,131 +37,97 @@ export default function Navbar() {
 
   return (
     <>
-      <motion.header
-        initial={{ y: -64, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className={cn(
-          'fixed top-0 inset-x-0 z-50 transition-all duration-500',
-          scrolled
-            ? 'glass border-b border-white/10 dark:border-white/5 shadow-sm shadow-black/5'
-            : 'bg-transparent border-b border-transparent'
-        )}
-      >
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 h-[60px] flex items-center justify-between gap-6">
+      <header className="fixed top-0 inset-x-0 z-50 bg-background border-b-2 border-border dark:border-border-strong">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 h-[72px] flex items-center justify-between gap-6">
 
-          {/* ── Logo ── */}
-          <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0">
-            <div className="relative w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-md shadow-violet-500/25 overflow-hidden">
-              <Zap className="w-4 h-4 text-white relative z-10" />
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-violet-400 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              />
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-3 flex-shrink-0 group">
+            <div className="w-9 h-9 bg-primary border-2 border-border dark:border-border-strong flex items-center justify-center brut-hover rounded-lg">
+              <Zap className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-[17px] tracking-tight">
-              <span className="gradient-text">Event</span>
-              <span className="text-foreground">Sphere</span>
+            <span className="font-black text-[20px] tracking-tight">
+              Event<span className="text-primary">Sphere</span>
             </span>
           </Link>
 
-          {/* ── Desktop nav ── */}
-          <nav className="hidden md:flex items-center gap-0.5">
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-1.5">
             {NAV_LINKS.map(({ to, label }) => (
               <NavLink key={to} to={to}>
                 {({ isActive }) => (
                   <span className={cn(
-                    'relative px-3.5 py-2 text-sm font-medium rounded-lg transition-colors duration-200 inline-block',
+                    'px-4 py-2 text-sm font-bold border-2 transition-all duration-150 inline-block rounded-lg',
                     isActive
-                      ? 'text-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-secondary border-border dark:border-border-strong text-secondary-foreground shadow-[2px_2px_0px_var(--border)] dark:shadow-[2px_2px_0px_var(--border-strong)]'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border dark:hover:border-border-strong hover:bg-muted'
                   )}>
                     {label}
-                    {isActive && (
-                      <motion.span
-                        layoutId="nav-pill"
-                        className="absolute inset-0 rounded-lg bg-foreground/6 dark:bg-white/6"
-                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                      />
-                    )}
                   </span>
                 )}
               </NavLink>
             ))}
           </nav>
 
-          {/* ── Right actions ── */}
-          <div className="flex items-center gap-1.5">
+          {/* Right */}
+          <div className="flex items-center gap-2">
             {/* Theme toggle */}
             <button
               onClick={toggle}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/6 transition-all duration-200"
+              className="p-2 border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg flex items-center justify-center"
               aria-label="Toggle theme"
             >
-              <motion.div
-                key={theme}
-                initial={{ rotate: -90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                transition={{ duration: 0.25 }}
-              >
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </motion.div>
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
 
             {isAuth ? (
-              <div className="flex items-center gap-1.5" ref={dropRef}>
-                {/* Bell */}
-                <Link to="/dashboard" className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/6 transition-all">
+              <div className="flex items-center gap-2" ref={dropRef}>
+                <Link to="/dashboard" className="relative p-2 border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg flex items-center justify-center">
                   <Bell className="w-4 h-4" />
-                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-violet-500 rounded-full ring-1 ring-background" />
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent border-2 border-background rounded-full" />
                 </Link>
 
-                {/* User dropdown */}
                 <div className="relative">
                   <button
                     onClick={() => setUserOpen(v => !v)}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-foreground/6 transition-all duration-200"
+                    className="flex items-center gap-2 px-3 py-1.5 border-2 border-border dark:border-border-strong brut-hover bg-card font-bold text-sm rounded-lg"
                   >
-                    <Avatar className="w-7 h-7">
-                      <AvatarImage src={user?.avatar} />
-                      <AvatarFallback className="text-[10px] font-bold bg-gradient-to-br from-indigo-500 to-violet-600 text-white">
-                        {user?.name?.[0]?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="hidden sm:block text-sm font-medium">{user?.name?.split(' ')[0]}</span>
-                    <ChevronDown className={cn('w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 hidden sm:block', userOpen && 'rotate-180')} />
+                    <div className="w-6 h-6 bg-primary border-2 border-border dark:border-border-strong rounded-md flex items-center justify-center text-[10px] font-black text-primary-foreground">
+                      {user?.name?.[0]?.toUpperCase() || 'U'}
+                    </div>
+                    <span className="hidden sm:block">{user?.name?.split(' ')[0]}</span>
+                    <ChevronDown className={cn('w-3.5 h-3.5 transition-transform duration-200 hidden sm:block', userOpen && 'rotate-180')} />
                   </button>
 
                   <AnimatePresence>
                     {userOpen && (
                       <motion.div
-                        initial={{ opacity: 0, scale: 0.96, y: -4 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.96, y: -4 }}
-                        transition={{ duration: 0.15, ease: 'easeOut' }}
-                        className="absolute right-0 top-full mt-2 w-56 glass border border-border rounded-2xl shadow-xl shadow-black/10 dark:shadow-black/30 overflow-hidden"
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.12 }}
+                        className="absolute right-0 top-full mt-2 w-52 bg-card border-2 border-border dark:border-border-strong overflow-hidden rounded-xl"
+                        style={{ boxShadow: 'var(--shadow-md)' }}
                       >
-                        <div className="px-4 py-3 border-b border-border">
-                          <p className="font-semibold text-sm truncate">{user?.name}</p>
-                          <p className="text-xs text-muted-foreground capitalize mt-0.5">{user?.role}</p>
+                        <div className="px-4 py-3 border-b-2 border-border dark:border-border-strong bg-muted">
+                          <p className="font-bold text-sm truncate">{user?.name}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
                         </div>
                         {[
-                          { to: dashLink(),       icon: User,     label: 'Dashboard' },
-                          { to: '/dashboard',     icon: Calendar, label: 'My Events' },
-                          { to: '/dashboard',     icon: Settings, label: 'Settings' },
+                          { to: dashLink(),   icon: User,     label: 'Dashboard' },
+                          { to: '/dashboard', icon: Calendar, label: 'My Events' },
+                          { to: '/dashboard', icon: Settings, label: 'Settings' },
                         ].map(({ to, icon: Icon, label }) => (
                           <Link key={label} to={to}
-                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground hover:bg-foreground/5 transition-colors"
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border/10"
                           >
-                            <Icon className="w-4 h-4 opacity-60" /> {label}
+                            <Icon className="w-4 h-4" /> {label}
                           </Link>
                         ))}
-                        <div className="border-t border-border mt-1">
-                          <button onClick={logout}
-                            className="flex items-center gap-3 px-4 py-2.5 w-full text-sm text-red-500 hover:bg-red-500/5 transition-colors"
-                          >
-                            <LogOut className="w-4 h-4" /> Sign Out
-                          </button>
-                        </div>
+                        <button onClick={logout}
+                          className="flex items-center gap-3 px-4 py-2.5 w-full text-sm font-bold text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors border-t-2 border-border dark:border-border-strong"
+                        >
+                          <LogOut className="w-4 h-4" /> Sign Out
+                        </button>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -178,14 +135,10 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="hidden md:flex items-center gap-2">
-                <Link to="/login"
-                  className="px-4 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-foreground/6"
-                >
+                <Link to="/login" className="px-4 py-2 text-sm font-bold border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg">
                   Sign In
                 </Link>
-                <Link to="/register"
-                  className="px-4 py-1.5 text-sm font-semibold bg-foreground text-background hover:opacity-90 transition-all rounded-xl shadow-sm"
-                >
+                <Link to="/register" className="px-4 py-2 text-sm font-bold border-2 border-border dark:border-border-strong brut-hover bg-primary text-primary-foreground rounded-lg">
                   Get Started
                 </Link>
               </div>
@@ -194,64 +147,40 @@ export default function Navbar() {
             {/* Mobile toggle */}
             <button
               onClick={() => setMobileOpen(v => !v)}
-              className="md:hidden p-2 rounded-lg hover:bg-foreground/6 transition-colors"
-              aria-label="Menu"
+              className="md:hidden p-2 border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg flex items-center justify-center"
             >
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.span key={mobileOpen ? 'x' : 'menu'}
-                  initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}
-                >
-                  {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                </motion.span>
-              </AnimatePresence>
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
-      </motion.header>
+      </header>
 
-      {/* ── Mobile menu ── */}
+      {/* Mobile menu */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed top-[60px] inset-x-0 z-40 glass border-b border-border md:hidden overflow-hidden"
+            transition={{ duration: 0.2 }}
+            className="fixed top-[72px] inset-x-0 z-40 bg-card border-b-2 border-border dark:border-border-strong md:hidden overflow-hidden shadow-xl"
           >
-            <div className="px-5 py-4 space-y-0.5">
-              {NAV_LINKS.map(({ to, label }, i) => (
-                <motion.div key={to}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <NavLink to={to} end={to === '/'}>
-                    {({ isActive }) => (
-                      <span className={cn(
-                        'block px-4 py-2.5 rounded-xl text-sm font-medium transition-colors',
-                        isActive ? 'bg-foreground/8 text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5'
-                      )}>{label}</span>
-                    )}
-                  </NavLink>
-                </motion.div>
+            <div className="px-5 py-4 space-y-1">
+              {NAV_LINKS.map(({ to, label }) => (
+                <NavLink key={to} to={to} end={to === '/'}>
+                  {({ isActive }) => (
+                    <span className={cn(
+                      'block px-4 py-3 text-sm font-bold border-2 rounded-lg transition-colors',
+                      isActive ? 'bg-secondary border-border dark:border-border-strong text-secondary-foreground shadow-[2px_2px_0px_var(--border)] dark:shadow-[2px_2px_0px_var(--border-strong)]' : 'border-transparent hover:bg-muted hover:border-border dark:hover:border-border-strong'
+                    )}>{label}</span>
+                  )}
+                </NavLink>
               ))}
               {!isAuth && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-                  className="flex gap-2 pt-3 mt-3 border-t border-border"
-                >
-                  <Link to="/login"
-                    className="flex-1 text-center py-2.5 text-sm font-medium rounded-xl border border-border hover:bg-foreground/5 transition-colors"
-                  >
-                    Sign In
-                  </Link>
-                  <Link to="/register"
-                    className="flex-1 text-center py-2.5 text-sm font-semibold rounded-xl bg-foreground text-background hover:opacity-90 transition-all"
-                  >
-                    Get Started
-                  </Link>
-                </motion.div>
+                <div className="flex gap-2 pt-3 mt-2 border-t-2 border-border dark:border-border-strong">
+                  <Link to="/login" className="flex-1 text-center py-2.5 text-sm font-bold border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg">Sign In</Link>
+                  <Link to="/register" className="flex-1 text-center py-2.5 text-sm font-bold border-2 border-border dark:border-border-strong brut-hover bg-primary text-primary-foreground rounded-lg">Get Started</Link>
+                </div>
               )}
             </div>
           </motion.div>

@@ -1,10 +1,13 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, ZoomIn } from 'lucide-react'
+import { Image, X, ZoomIn } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { CATEGORIES } from '@/data/mockData'
+import { galleryApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
-const API_BASE = 'http://localhost:5000'
+const API_BASE = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace('/api', '')
+  : 'http://localhost:5000'
 
 export default function Gallery() {
   const [filter,   setFilter]   = useState('all')
@@ -16,11 +19,8 @@ export default function Gallery() {
     const fetchGallery = async () => {
       setLoading(true)
       try {
-        const url = filter === 'all'
-          ? `${API_BASE}/api/gallery`
-          : `${API_BASE}/api/gallery?category=${filter}`
-        const res = await fetch(url)
-        const data = await res.json()
+        const params = filter === 'all' ? {} : { category: filter }
+        const { data } = await galleryApi.getAll(params)
         setGallery(data.items || [])
       } catch (err) {
         console.error('Gallery fetch error:', err)
@@ -31,111 +31,131 @@ export default function Gallery() {
     fetchGallery()
   }, [filter])
 
-  const filtered = gallery
-
   return (
-    <div className="min-h-screen pt-[60px]">
+    <div className="min-h-screen pt-[72px] bg-background">
       {/* Header */}
       <div className="max-w-7xl mx-auto px-5 sm:px-8 pt-16 pb-10">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Media</p>
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4">Event Gallery</h1>
-          <p className="text-muted-foreground text-lg max-w-xl">Relive the moments from past events. Every photo tells a story.</p>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-2">Campus Media</p>
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tight mb-4">Event Photo Gallery</h1>
+          <p className="text-muted-foreground font-semibold text-base sm:text-lg max-w-xl">
+            Relive key highlights, student celebrations, and exhibition moments across campus.
+          </p>
         </motion.div>
       </div>
 
       <div className="max-w-7xl mx-auto px-5 sm:px-8 pb-24">
         {/* Filter pills */}
-        <div className="flex gap-2 flex-wrap mb-10">
+        <div className="flex gap-3 flex-wrap mb-10 pb-4 border-b-2 border-border dark:border-border-strong">
           {['all', ...CATEGORIES].map((c, i) => (
             <motion.button
               key={c}
-              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
               onClick={() => setFilter(c)}
               className={cn(
-                'px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all duration-200 border',
+                'px-5 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-200 border-2',
                 filter === c
-                  ? 'bg-foreground text-background border-foreground'
-                  : 'border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground bg-card'
+                  ? 'bg-foreground text-background shadow-[2px_2px_0px_var(--border)] dark:shadow-[2px_2px_0px_var(--border-strong)] border-border dark:border-border-strong scale-[1.02]'
+                  : 'border-border dark:border-border-strong text-muted-foreground hover:bg-muted hover:text-foreground hover:shadow-[2px_2px_0px_var(--border)] dark:hover:shadow-[2px_2px_0px_var(--border-strong)] bg-background'
               )}
             >
-              {c === 'all' ? 'All' : c}
+              {c === 'all' ? 'All Photos' : c}
             </motion.button>
           ))}
         </div>
 
         {/* Loading state */}
-        {loading && (
-          <div className="text-center py-24 text-muted-foreground">Loading gallery...</div>
-        )}
-
-        {/* Masonry grid */}
-        {!loading && (
-          <motion.div layout className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
+        {loading ? (
+          <div className="text-center py-24 text-muted-foreground flex flex-col items-center gap-4">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="text-xs font-black uppercase tracking-widest">Loading campus gallery...</span>
+          </div>
+        ) : gallery.length === 0 ? (
+          <div className="text-center py-20 border-2 border-dashed border-border dark:border-border-strong rounded-2xl bg-card brut-box">
+            <Image className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+            <p className="text-lg font-black text-foreground">No photos found</p>
+            <p className="text-sm font-semibold text-muted-foreground mt-2">No uploads in this category yet.</p>
+          </div>
+        ) : (
+          /* Masonry grid */
+          <motion.div layout className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
             <AnimatePresence>
-              {filtered.map((item, i) => (
+              {gallery.map((item, i) => (
                 <motion.div
                   key={item._id}
                   layout
-                  initial={{ opacity: 0, scale: 0.92 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.92 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.35, delay: i * 0.03 }}
-                  className="break-inside-avoid cursor-pointer group relative rounded-xl overflow-hidden border border-border"
+                  className="break-inside-avoid cursor-pointer group relative rounded-xl overflow-hidden border-2 border-border dark:border-border-strong bg-card shadow-[4px_4px_0px_var(--border)] dark:shadow-[4px_4px_0px_var(--border-strong)] hover:shadow-none hover:translate-y-1 hover:translate-x-1 transition-all"
                   onClick={() => setLightbox(item)}
                 >
                   <img
                     src={`${API_BASE}${item.file_url}`}
                     alt={item.caption}
-                    className="w-full object-cover transition-transform duration-600 group-hover:scale-105"
+                    className="w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-colors duration-300" />
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center text-white">
-                      <ZoomIn className="w-4 h-4" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-5">
+                    <div className="self-end">
+                      <div className="w-10 h-10 rounded-lg border-2 border-white/20 bg-white/10 backdrop-blur-md flex items-center justify-center text-white shadow-sm">
+                        <ZoomIn className="w-5 h-5" />
+                      </div>
                     </div>
-                  </div>
-                  <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                    <p className="text-white text-xs font-semibold truncate">{item.caption}</p>
-                    <span className="inline-block mt-1 text-[10px] font-semibold uppercase tracking-wider text-white/60">{item.category}</span>
+                    <div>
+                      <span className="inline-block px-3 py-1 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground border-2 border-black/20 rounded shadow-sm mb-2">
+                        {item.category}
+                      </span>
+                      <p className="text-white text-sm font-bold line-clamp-2 leading-snug">{item.caption}</p>
+                    </div>
                   </div>
                 </motion.div>
               ))}
             </AnimatePresence>
           </motion.div>
         )}
-
-        {!loading && filtered.length === 0 && (
-          <div className="text-center py-24 text-muted-foreground">No photos found for this category.</div>
-        )}
       </div>
 
-      {/* Lightbox */}
+      {/* Lightbox Modal */}
       <AnimatePresence>
         {lightbox && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-background/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-8"
             onClick={() => setLightbox(null)}
           >
             <button
               onClick={() => setLightbox(null)}
-              className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10"
-              aria-label="Close"
+              className="absolute top-6 right-6 w-12 h-12 rounded-lg bg-black/20 hover:bg-black/40 text-white flex items-center justify-center transition-colors z-10 border-2 border-white/10"
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </button>
             <motion.div
-              initial={{ scale: 0.88, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.88, opacity: 0 }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="relative max-w-4xl w-full"
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="max-w-5xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden brut-box bg-card p-0"
               onClick={e => e.stopPropagation()}
             >
-              <img src={`${API_BASE}${lightbox.file_url}`} alt={lightbox.caption} className="w-full rounded-2xl" />
-              <div className="mt-4 text-center">
-                <p className="font-semibold text-white">{lightbox.caption}</p>
-                <span className="text-xs uppercase tracking-wider text-white/50 mt-1 inline-block">{lightbox.category}</span>
+              <div className="bg-black/5 flex items-center justify-center p-4">
+                <img
+                  src={`${API_BASE}${lightbox.file_url}`}
+                  alt={lightbox.caption}
+                  className="max-h-[65vh] w-auto object-contain rounded border-2 border-black/10 shadow-sm"
+                />
+              </div>
+              <div className="p-6 bg-card border-t-2 border-border dark:border-border-strong flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <p className="font-black text-lg text-foreground">{lightbox.caption}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-primary mt-1">{lightbox.category}</p>
+                </div>
+                <span className="px-3 py-1.5 rounded-lg border-2 border-border dark:border-border-strong bg-muted text-[10px] font-black uppercase tracking-widest text-muted-foreground whitespace-nowrap">
+                  CollegeEventSphere
+                </span>
               </div>
             </motion.div>
           </motion.div>

@@ -1,80 +1,78 @@
 import { format } from 'date-fns'
 import { motion } from 'framer-motion'
-import { ArrowUpRight, Calendar, MapPin, Users } from 'lucide-react'
+import { ArrowUpRight, Calendar, ImageOff, MapPin, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 
-const CAT_ACCENT = {
-  Technical:      'hsl(246 83% 60%)',
-  Cultural:       'hsl(336 78% 60%)',
-  Sports:         'hsl(145 63% 42%)',
-  Workshop:       'hsl(192 91% 50%)',
-  Seminar:        'hsl(38 95% 55%)',
-  'Annual Day':   'hsl(280 70% 60%)',
-  Intercollegiate:'hsl(200 85% 52%)',
+/* ── Category accents ────────────────────────────────────────────────── */
+const CAT_THEME = {
+  Technical:      { bg: 'bg-[#E8F4FF] dark:bg-[#1E3A5F]', text: 'text-blue-800 dark:text-blue-200',   barBg: 'bg-blue-600 dark:bg-blue-400' },
+  Cultural:       { bg: 'bg-[#FFE8F0] dark:bg-[#5F1E3A]', text: 'text-pink-800 dark:text-pink-200',   barBg: 'bg-pink-600 dark:bg-pink-400' },
+  Sports:         { bg: 'bg-[#E8FFE8] dark:bg-[#1E5F3A]', text: 'text-emerald-800 dark:text-emerald-200',barBg: 'bg-emerald-600 dark:bg-emerald-400' },
+  Workshop:       { bg: 'bg-[#E8FFFF] dark:bg-[#1E5F5F]', text: 'text-cyan-800 dark:text-cyan-200',   barBg: 'bg-cyan-600 dark:bg-cyan-400' },
+  Seminar:        { bg: 'bg-[#FFF8E8] dark:bg-[#5F4A1E]', text: 'text-amber-800 dark:text-amber-200',  barBg: 'bg-amber-600 dark:bg-amber-400' },
+  'Annual Day':   { bg: 'bg-[#F0E8FF] dark:bg-[#3A1E5F]', text: 'text-violet-800 dark:text-violet-200', barBg: 'bg-violet-600 dark:bg-violet-400' },
+  Intercollegiate:{ bg: 'bg-[#E8FFF8] dark:bg-[#1E5F4A]', text: 'text-teal-800 dark:text-teal-200',   barBg: 'bg-teal-600 dark:bg-teal-400' },
 }
+const DEFAULT_THEME = { bg: 'bg-muted', text: 'text-foreground', barBg: 'bg-primary' }
 
-const CAT_BG = {
-  Technical:      'bg-indigo-500/10 text-indigo-400 dark:text-indigo-300',
-  Cultural:       'bg-pink-500/10 text-pink-400 dark:text-pink-300',
-  Sports:         'bg-emerald-500/10 text-emerald-500 dark:text-emerald-300',
-  Workshop:       'bg-cyan-500/10 text-cyan-500 dark:text-cyan-300',
-  Seminar:        'bg-amber-500/10 text-amber-500 dark:text-amber-300',
-  'Annual Day':   'bg-purple-500/10 text-purple-400 dark:text-purple-300',
-  Intercollegiate:'bg-sky-500/10 text-sky-500 dark:text-sky-300',
-}
+function safeDate(d) { try { return format(new Date(d), 'EEE, MMM d') } catch { return d || '—' } }
+function safeVenue(v) { return v ? v.split(',')[0] : '—' }
 
 export default function EventCard({ event, index = 0, featured = false }) {
-  const pct      = Math.round((event.seatsBooked / event.totalSeats) * 100)
-  const isFull   = event.seatsBooked >= event.totalSeats
+  const pct      = event.totalSeats ? Math.round((event.seatsBooked / event.totalSeats) * 100) : 0
+  const isFull   = event.totalSeats > 0 && event.seatsBooked >= event.totalSeats
   const isAlmost = pct >= 75
+  const cat      = CAT_THEME[event.category] || DEFAULT_THEME
+  const barColor = isFull ? 'bg-destructive' : isAlmost ? 'bg-amber-500' : cat.barBg
 
+  /* ── FEATURED (cinematic) ─────────────────────────────────────────── */
   if (featured) {
     return (
       <motion.article
-        initial={{ opacity: 0, y: 24 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="group relative rounded-2xl overflow-hidden bg-card border border-border card-lift cursor-pointer"
+        transition={{ delay: index * 0.1, duration: 0.5 }}
+        className="group relative brut-box overflow-hidden brut-hover"
         style={{ aspectRatio: '16/9' }}
       >
         <Link to={`/events/${event._id}`} className="block absolute inset-0">
-          <img
-            src={event.image}
-            alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 img-overlay" />
+          {event.image ? (
+            <img
+              src={event.image} alt={event.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+              onError={e => { e.target.style.display = 'none' }}
+            />
+          ) : (
+            <div className={`w-full h-full ${cat.bg} flex items-center justify-center`}>
+              <ImageOff className="w-14 h-14 opacity-20" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
           {/* Category */}
-          <div className="absolute top-4 left-4">
-            <span className={cn('tag bg-black/40 border-white/20 text-white backdrop-blur-sm')}>
+          <div className="absolute top-5 left-5">
+            <span className="tag border-white bg-black/60 text-white shadow-[2px_2px_0px_#fff]">
               {event.category}
             </span>
           </div>
 
-          {/* Featured badge */}
           {event.featured && (
-            <div className="absolute top-4 right-4">
-              <span className="tag bg-violet-600/80 border-violet-400/40 text-white backdrop-blur-sm">
-                Featured
+            <div className="absolute top-5 right-5">
+              <span className="tag border-primary bg-primary text-primary-foreground shadow-[2px_2px_0px_var(--primary)]">
+                ✦ Featured
               </span>
             </div>
           )}
 
-          {/* Bottom content */}
-          <div className="absolute bottom-0 inset-x-0 p-5">
-            <h3 className="text-white font-bold text-xl leading-tight mb-2 drop-shadow">{event.title}</h3>
-            <div className="flex items-center gap-4 text-white/70 text-xs">
-              <span className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5" />
-                {format(new Date(event.date), 'MMM d, yyyy')}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5" />
-                {event.venue.split(',')[0]}
-              </span>
+          {/* Bottom */}
+          <div className="absolute bottom-0 inset-x-0 p-6 sm:p-8">
+            <h3 className="text-white font-black text-2xl sm:text-3xl leading-tight mb-3 line-clamp-2">{event.title}</h3>
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-white/80 text-sm font-semibold">
+              <span className="flex items-center gap-2"><Calendar className="w-4 h-4" />{safeDate(event.date)}</span>
+              <span className="flex items-center gap-2"><MapPin className="w-4 h-4" />{safeVenue(event.venue)}</span>
+              <span className="flex items-center gap-2 sm:ml-auto bg-white/20 px-3 py-1 rounded-md text-white border border-white/30"><Users className="w-4 h-4" />{event.seatsBooked}/{event.totalSeats}</span>
             </div>
           </div>
         </Link>
@@ -82,75 +80,80 @@ export default function EventCard({ event, index = 0, featured = false }) {
     )
   }
 
+  /* ── STANDARD card ───────────────────────────────────────────────── */
   return (
     <motion.article
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.07, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className="group relative flex flex-col bg-card border border-border rounded-2xl overflow-hidden card-lift"
+      transition={{ delay: index * 0.07, duration: 0.4 }}
+      className="group flex flex-col bg-card brut-box overflow-hidden brut-hover h-full flex-1"
     >
       {/* Image */}
-      <Link to={`/events/${event._id}`} className="block relative overflow-hidden" style={{ aspectRatio: '16/9' }}>
-        <img
-          src={event.image}
-          alt={event.title}
-          className="w-full h-full object-cover transition-transform duration-600 group-hover:scale-105"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <Link to={`/events/${event._id}`} className="block relative overflow-hidden border-b-2 border-border dark:border-border-strong" style={{ aspectRatio: '16/9' }}>
+        {event.image ? (
+          <img
+            src={event.image} alt={event.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+            onError={e => { e.target.style.display = 'none' }}
+          />
+        ) : (
+          <div className={`w-full h-full ${cat.bg} flex items-center justify-center`}>
+            <ImageOff className="w-10 h-10 opacity-20" />
+          </div>
+        )}
 
-        {/* Arrow link on hover */}
-        <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0">
-          <ArrowUpRight className="w-4 h-4" />
-        </div>
-
-        {/* Category */}
-        <div className="absolute top-3 left-3">
-          <span className={cn('tag text-[10px] border-transparent', CAT_BG[event.category] || 'bg-white/10 text-white')}>
+        {/* Category badge */}
+        <div className="absolute top-4 left-4">
+          <span className={cn('tag', cat.bg, cat.text)}>
             {event.category}
           </span>
+        </div>
+
+        {/* Arrow */}
+        <div className="absolute top-4 right-4 w-9 h-9 bg-card border-2 border-border dark:border-border-strong rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-[2px_2px_0px_var(--border)] dark:shadow-[2px_2px_0px_var(--border-strong)]">
+          <ArrowUpRight className="w-5 h-5 text-foreground" />
         </div>
       </Link>
 
       {/* Body */}
-      <div className="flex flex-col flex-1 p-4">
+      <div className="flex flex-col flex-1 p-5 sm:p-6 bg-card">
         <Link to={`/events/${event._id}`}>
-          <h3 className="font-semibold text-[15px] leading-snug mb-1.5 line-clamp-2 group-hover:text-primary transition-colors">
+          <h3 className="font-black text-lg leading-snug mb-4 line-clamp-2 hover:text-primary transition-colors">
             {event.title}
           </h3>
         </Link>
 
-        <div className="flex flex-col gap-1 mb-3">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Calendar className="w-3 h-3 flex-shrink-0" />
-            <span>{format(new Date(event.date), 'EEE, MMM d')} · {event.time}</span>
+        <div className="flex flex-col gap-2 mb-6 flex-1">
+          <div className="flex items-center gap-2.5 text-sm font-semibold text-muted-foreground">
+            <Calendar className="w-4 h-4 flex-shrink-0 text-foreground" />
+            <span>{safeDate(event.date)}{event.time ? ` · ${event.time}` : ''}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <MapPin className="w-3 h-3 flex-shrink-0" />
-            <span className="truncate">{event.venue.split(',')[0]}</span>
+          <div className="flex items-center gap-2.5 text-sm font-semibold text-muted-foreground">
+            <MapPin className="w-4 h-4 flex-shrink-0 text-foreground" />
+            <span className="truncate">{safeVenue(event.venue)}</span>
           </div>
         </div>
 
         {/* Capacity */}
-        <div className="mt-auto">
-          <div className="flex justify-between text-[11px] mb-1.5">
-            <span className="flex items-center gap-1 text-muted-foreground">
-              <Users className="w-3 h-3" /> {event.seatsBooked}/{event.totalSeats}
+        <div className="mt-auto pt-4 border-t-2 border-border dark:border-border-strong">
+          <div className="flex justify-between text-xs font-black mb-2.5 uppercase tracking-widest">
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <Users className="w-3.5 h-3.5" />
+              {event.seatsBooked ?? 0}/{event.totalSeats ?? 0}
             </span>
             <span className={cn(
-              'font-semibold',
-              isFull ? 'text-red-500' : isAlmost ? 'text-amber-500' : 'text-emerald-500'
+              isFull ? 'text-destructive' : isAlmost ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'
             )}>
-              {isFull ? 'Full' : `${event.totalSeats - event.seatsBooked} left`}
+              {isFull ? 'SOLD OUT' : `${(event.totalSeats ?? 0) - (event.seatsBooked ?? 0)} LEFT`}
             </span>
           </div>
-          <div className="h-0.5 bg-muted rounded-full overflow-hidden">
+          <div className="h-2.5 bg-muted border-2 border-border dark:border-border-strong rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${pct}%` }}
-              transition={{ delay: 0.4 + index * 0.07, duration: 0.9, ease: 'easeOut' }}
-              className="h-full rounded-full"
-              style={{ background: isFull ? 'hsl(0 84% 60%)' : isAlmost ? 'hsl(38 95% 55%)' : CAT_ACCENT[event.category] || 'hsl(246 83% 60%)' }}
+              transition={{ delay: 0.3 + index * 0.06, duration: 0.8, ease: 'easeOut' }}
+              className={cn('h-full', barColor)}
             />
           </div>
         </div>
