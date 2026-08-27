@@ -49,7 +49,7 @@ export const registrationsApi = {
   cancel:      (eventId, reason) => api.delete(`/registrations/${eventId}`, { data: { reason } }),
   getMyReg:    ()        => api.get('/registrations/my'),
   getEventReg: (eventId) => api.get(`/registrations/event/${eventId}`),
-  scanQr:      (qrToken) => api.post('/registrations/scan', { qrToken }),
+  scanQr:      (qrToken, eventId) => api.post('/registrations/scan', { qrToken, eventId }),
 }
 
 export const notificationsApi = {

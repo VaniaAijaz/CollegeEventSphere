@@ -1,4 +1,3 @@
-import crypto from 'crypto'
 import QRCode from 'qrcode'
 import Registration from '../models/Registration.js'
 import Event from '../models/Event.js'
@@ -20,23 +19,38 @@ export const registerForEvent = async (req, res) => {
     if (deadline < today)
       return res.status(400).json({ message: 'Registration deadline passed' })
 
-    // already registered?
-    const dup = await Registration.findOne({ user: req.user._id, event: event._id })
-    if (dup) return res.status(409).json({ message: 'Already registered', registration: dup })
+    // Check for existing registration (excluding cancelled)
+    const existing = await Registration.findOne({ user: req.user._id, event: event._id })
+    if (existing) {
+      if (existing.status !== 'cancelled') {
+        return res.status(409).json({ message: 'Already registered', registration: existing })
+      }
+      // Cancelled before — allow re-registration by updating the existing doc
+    }
 
     const isFull = event.seatsBooked >= event.totalSeats
-
     if (isFull && !event.waitlistEnabled)
       return res.status(400).json({ message: 'Event is full' })
 
     const status = isFull ? 'waitlisted' : 'confirmed'
-    const qrToken = crypto.randomBytes(20).toString('hex')
-    const attendanceCode = Math.random().toString(36).substring(2, 6).toUpperCase()
 
-    let qrCode = ''
-    if (status === 'confirmed') {
-      qrCode = await QRCode.toDataURL(qrToken)
+    // Generate a unique 4-char alphanumeric attendance code
+    const generateCode = async () => {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+      let code
+      let unique = false
+      while (!unique) {
+        code = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+        const clash = await Registration.findOne({ attendanceCode: code })
+        if (!clash) unique = true
+      }
+      return code
     }
+
+    const attendanceCode = status === 'confirmed' ? await generateCode() : undefined
+    // QR encodes the attendanceCode so scanning = same as typing the code
+    const qrCode = status === 'confirmed' ? await QRCode.toDataURL(attendanceCode) : ''
+    const qrToken = attendanceCode // store same value for backwards-compat scan lookup
 
     // Atomic seat increment
     if (status === 'confirmed') {
@@ -45,21 +59,33 @@ export const registerForEvent = async (req, res) => {
         { $inc: { seatsBooked: 1 } },
         { new: true }
       )
-      if (!updated) {
-        // race condition — seat was taken between the check and update
-        if (!event.waitlistEnabled)
-          return res.status(400).json({ message: 'Event just filled up. Try waitlist.' })
-      }
+      if (!updated && !event.waitlistEnabled)
+        return res.status(400).json({ message: 'Event just filled up. Try waitlist.' })
     }
 
-    const registration = await Registration.create({
-      user: req.user._id,
-      event: event._id,
-      status,
-      qrToken: status === 'confirmed' ? qrToken : undefined,
-      qrCode:  status === 'confirmed' ? qrCode  : undefined,
-      attendanceCode: status === 'confirmed' ? attendanceCode : undefined,
-    })
+    let registration
+    if (existing && existing.status === 'cancelled') {
+      // Re-activate the cancelled doc
+      existing.status         = status
+      existing.qrToken        = qrToken
+      existing.qrCode         = qrCode
+      existing.attendanceCode = attendanceCode
+      existing.cancelledAt    = undefined
+      existing.cancellationReason = undefined
+      existing.attended       = false
+      existing.attendedAt     = undefined
+      await existing.save()
+      registration = existing
+    } else {
+      registration = await Registration.create({
+        user: req.user._id,
+        event: event._id,
+        status,
+        qrToken,
+        qrCode,
+        attendanceCode,
+      })
+    }
 
     // increment user counter
     await User.findByIdAndUpdate(req.user._id, { $inc: { eventsRegistered: 1 } })
@@ -78,7 +104,7 @@ export const registerForEvent = async (req, res) => {
     const mailData = status === 'confirmed'
       ? registrationConfirmedMail(req.user.name, event.title, qrCode)
       : waitlistConfirmedMail(req.user.name, event.title)
-    sendMail({ to: req.user.email, ...mailData }) // fire-and-forget
+    sendMail({ to: req.user.email, ...mailData })
 
     res.status(201).json({ success: true, registration })
   } catch (err) {
@@ -124,12 +150,18 @@ export const cancelRegistration = async (req, res) => {
       }).sort({ createdAt: 1 })
 
       if (next) {
-        const qrToken = crypto.randomBytes(20).toString('hex')
-        const qrCode  = await QRCode.toDataURL(qrToken)
-        const attendanceCode = Math.random().toString(36).substring(2, 6).toUpperCase()
-        next.status   = 'confirmed'
-        next.qrToken  = qrToken
-        next.qrCode   = qrCode
+        // generate unique 4-char attendance code
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+        let attendanceCode, unique = false
+        while (!unique) {
+          attendanceCode = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+          const clash = await Registration.findOne({ attendanceCode })
+          if (!clash) unique = true
+        }
+        const qrCode = await QRCode.toDataURL(attendanceCode)
+        next.status         = 'confirmed'
+        next.qrToken        = attendanceCode
+        next.qrCode         = qrCode
         next.attendanceCode = attendanceCode
         await next.save()
         await Event.findByIdAndUpdate(req.params.eventId, { $inc: { seatsBooked: 1 } })
@@ -180,32 +212,45 @@ export const getEventRegistrations = async (req, res) => {
   }
 }
 
-// POST /api/registrations/scan  — QR scan attendance (organizer)
+// POST /api/registrations/scan  — QR scan / code attendance (organizer/admin)
 export const markAttendance = async (req, res) => {
   try {
-    const { qrToken } = req.body
+    const { qrToken, eventId } = req.body
     if (!qrToken) return res.status(400).json({ message: 'qrToken required' })
+    if (!eventId) return res.status(400).json({ message: 'eventId required — select an event first' })
 
-    const tokenUpper = qrToken.toUpperCase()
-    const reg = await Registration.findOne({
-      $or: [{ qrToken }, { attendanceCode: tokenUpper }]
-    }).populate('event', 'title organizer')
-    if (!reg) return res.status(404).json({ message: 'Invalid QR code or Pass' })
+    // Validate that the event exists and check date
+    const event = await Event.findById(eventId)
+    if (!event) return res.status(404).json({ message: 'Event not found' })
 
-    // organizer can only scan their own events
+    // Attendance can only be marked on the day of the event
+    const today = new Date().toISOString().split('T')[0]
+    const eventDate = (event.date || '').slice(0, 10)
+    if (eventDate !== today)
+      return res.status(400).json({ message: `Attendance can only be marked on the event date (${eventDate})` })
+
+    // organizer must own this event
     if (
       req.user.role === 'organizer' &&
-      reg.event.organizer.toString() !== req.user._id.toString()
+      event.organizer.toString() !== req.user._id.toString()
     ) return res.status(403).json({ message: 'Not your event' })
 
-    if (reg.attended) return res.status(400).json({ message: 'Already marked attended' })
+    const codeUpper = qrToken.toUpperCase().trim()
+    const reg = await Registration.findOne({
+      event: eventId,
+      $or: [{ attendanceCode: codeUpper }, { qrToken: codeUpper }],
+      status: 'confirmed',
+    }).populate('user', 'name enrollNo department')
+
+    if (!reg) return res.status(404).json({ message: 'No confirmed registration found for this code in the selected event' })
+    if (reg.attended) return res.status(400).json({ message: `Already marked attended — ${reg.user?.name || 'Attendee'}` })
 
     reg.attended   = true
     reg.status     = 'attended'
     reg.attendedAt = new Date()
     await reg.save()
 
-    await User.findByIdAndUpdate(reg.user, {
+    await User.findByIdAndUpdate(reg.user._id, {
       $inc: { eventsAttended: 1, certificatesEarned: 1 },
     })
 

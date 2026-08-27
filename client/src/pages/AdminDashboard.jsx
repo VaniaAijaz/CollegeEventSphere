@@ -15,9 +15,9 @@ import { CATEGORIES, DEPARTMENTS } from '@/data/mockData'
 import { cn } from '@/lib/utils'
 import BoothManager from '@/components/booths/BoothManager'
 
-
+/* ══════════════════════════════════════════════════════════════════════════
    CONSTANTS
-
+══════════════════════════════════════════════════════════════════════════ */
 const TABS = [
   { id: 'overview',      label: 'Overview',      icon: BarChart3  },
   { id: 'ai',            label: 'AI Copilot',    icon: Sparkles   },
@@ -36,9 +36,9 @@ const EMPTY_FORM = {
   registrationDeadline: '', waitlistEnabled: false, featured: false, tags: '',
 }
 
-
+/* ══════════════════════════════════════════════════════════════════════════
    SVG CHART PRIMITIVES
-
+══════════════════════════════════════════════════════════════════════════ */
 function Sparkline({ data = [], width = 80, height = 28 }) {
   if (!data.length) return null
   const max = Math.max(...data)
@@ -91,7 +91,6 @@ function DonutChart({ segments = [], size = 100 }) {
   const cx    = size / 2
   const cy    = size / 2
   const circ  = 2 * Math.PI * r
-  let offset  = 0
   const colors = [
     'var(--foreground)',
     'var(--muted-foreground)',
@@ -99,14 +98,18 @@ function DonutChart({ segments = [], size = 100 }) {
     'var(--destructive)',
     'var(--accent)',
   ]
+  const mappedSegments = segments.reduce((acc, seg) => {
+    const offset = acc.length === 0 ? 0 : acc[acc.length - 1].offset + acc[acc.length - 1].value
+    return [...acc, { ...seg, offset }]
+  }, [])
+
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {segments.map((seg, i) => {
+      {mappedSegments.map((seg, i) => {
         const frac   = seg.value / total
         const dash   = frac * circ
         const gap    = circ - dash
-        const rotate = (offset / total) * 360 - 90
-        offset += seg.value
+        const rotate = (seg.offset / total) * 360 - 90
         return (
           <circle
             key={i}
@@ -126,9 +129,9 @@ function DonutChart({ segments = [], size = 100 }) {
   )
 }
 
-
+/* ══════════════════════════════════════════════════════════════════════════
    BADGE & STATUS HELPERS
-
+══════════════════════════════════════════════════════════════════════════ */
 const STATUS_COLORS = {
   upcoming:  'micro-badge-accent',
   pending:   'micro-badge',
@@ -145,8 +148,35 @@ function StatusBadge({ status }) {
   )
 }
 
-
+/* ══════════════════════════════════════════════════════════════════════════
    EVENT FORM MODAL
+══════════════════════════════════════════════════════════════════════════ */
+const Field = ({ label, name, type = 'text', placeholder = '', form, set }) => (
+  <div className="space-y-1">
+    <label className="meta-text">{label}</label>
+    <input
+      type={type}
+      value={form[name]}
+      onChange={e => set(name, e.target.value)}
+      placeholder={placeholder}
+      className="w-full px-3 py-2 text-sm bg-transparent"
+    />
+  </div>
+)
+
+const SelectField = ({ label, name, options, form, set }) => (
+  <div className="space-y-1">
+    <label className="meta-text">{label}</label>
+    <select
+      value={form[name]}
+      onChange={e => set(name, e.target.value)}
+      className="w-full px-3 py-2 text-sm bg-card"
+    >
+      <option value="">Select…</option>
+      {options.map(o => <option key={o} value={o}>{o}</option>)}
+    </select>
+  </div>
+)
 
 function EventFormModal({ initial, onClose, onSaved }) {
   const [form, setForm] = useState(
@@ -197,38 +227,6 @@ function EventFormModal({ initial, onClose, onSaved }) {
     }
   }
 
-  const Field = ({ label, name, type = 'text', placeholder = '' }) => (
-    <div className="space-y-1">
-      <label htmlFor={`adm-${name}`} className="meta-text">{label}</label>
-      <input
-        id={`adm-${name}`}
-        name={name}
-        type={type}
-        value={form[name]}
-        onChange={e => set(name, e.target.value)}
-        placeholder={placeholder}
-        className="w-full px-3 py-2 text-sm bg-transparent"
-        autoComplete={type === 'date' || type === 'time' ? 'off' : undefined}
-      />
-    </div>
-  )
-
-  const SelectField = ({ label, name, options }) => (
-    <div className="space-y-1">
-      <label htmlFor={`adm-${name}`} className="meta-text">{label}</label>
-      <select
-        id={`adm-${name}`}
-        name={name}
-        value={form[name]}
-        onChange={e => set(name, e.target.value)}
-        className="w-full px-3 py-2 text-sm bg-card"
-      >
-        <option value="">Select…</option>
-        {options.map(o => <option key={o} value={o}>{o}</option>)}
-      </select>
-    </div>
-  )
-
   return (
     <AnimatePresence>
       <motion.div
@@ -260,28 +258,26 @@ function EventFormModal({ initial, onClose, onSaved }) {
                 <label className="btn-editorial btn-editorial-outline text-xs cursor-pointer">
                   <Upload className="w-3.5 h-3.5" />
                   {imgFile ? imgFile.name : 'Upload Image'}
-                  <input type="file" id="adm-cover-img" name="coverImage" accept="image/*" className="hidden" onChange={handleImg} />
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImg} />
                 </label>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
-                <Field label="Title" name="title" placeholder="Event title" />
+                <Field label="Title" name="title" placeholder="Event title" form={form} set={set} />
               </div>
-              <SelectField label="Category"   name="category"   options={CATEGORIES}   />
-              <SelectField label="Department" name="department" options={DEPARTMENTS}  />
-              <Field label="Date"                     name="date"                 type="date"   />
-              <Field label="Start Time"               name="time"                 type="time"   />
-              <Field label="End Time"                 name="endTime"              type="time"   />
-              <Field label="Total Seats"              name="totalSeats"           type="number" placeholder="100" />
-              <Field label="Venue"                    name="venue"                placeholder="Main Auditorium" />
-              <Field label="Registration Deadline"    name="registrationDeadline" type="date"   />
+              <SelectField label="Category"   name="category"   options={CATEGORIES} form={form} set={set} />
+              <SelectField label="Department" name="department" options={DEPARTMENTS} form={form} set={set} />
+              <Field label="Date"                     name="date"                 type="date" form={form} set={set} />
+              <Field label="Start Time"               name="time"                 type="time" form={form} set={set} />
+              <Field label="End Time"                 name="endTime"              type="time" form={form} set={set} />
+              <Field label="Total Seats"              name="totalSeats"           type="number" placeholder="100" form={form} set={set} />
+              <Field label="Venue"                    name="venue"                placeholder="Main Auditorium" form={form} set={set} />
+              <Field label="Registration Deadline"    name="registrationDeadline" type="date" form={form} set={set} />
               <div className="sm:col-span-2">
-                <label htmlFor="adm-description" className="meta-text block mb-1">Description</label>
+                <label className="meta-text block mb-1">Description</label>
                 <textarea
-                  id="adm-description"
-                  name="description"
                   rows={3}
                   value={form.description}
                   onChange={e => set('description', e.target.value)}
@@ -290,25 +286,25 @@ function EventFormModal({ initial, onClose, onSaved }) {
                 />
               </div>
               <div className="sm:col-span-2">
-                <Field label="Tags (comma separated)" name="tags" placeholder="hackathon, coding, AI" />
+                <Field label="Tags (comma separated)" name="tags" placeholder="hackathon, coding, AI" form={form} set={set} />
               </div>
               <div className="flex items-center gap-3">
                 <input
-                  type="checkbox" id="adm-waitlist" name="waitlistEnabled"
+                  type="checkbox" id="waitlist"
                   checked={form.waitlistEnabled}
                   onChange={e => set('waitlistEnabled', e.target.checked)}
                   className="w-4 h-4"
                 />
-                <label htmlFor="adm-waitlist" className="meta-text cursor-pointer">Enable Waitlist</label>
+                <label htmlFor="waitlist" className="meta-text cursor-pointer">Enable Waitlist</label>
               </div>
               <div className="flex items-center gap-3">
                 <input
-                  type="checkbox" id="adm-featured" name="featured"
+                  type="checkbox" id="featured"
                   checked={form.featured}
                   onChange={e => set('featured', e.target.checked)}
                   className="w-4 h-4"
                 />
-                <label htmlFor="adm-featured" className="meta-text cursor-pointer">Featured Event</label>
+                <label htmlFor="featured" className="meta-text cursor-pointer">Featured Event</label>
               </div>
             </div>
 
@@ -330,9 +326,9 @@ function EventFormModal({ initial, onClose, onSaved }) {
   )
 }
 
-
+/* ══════════════════════════════════════════════════════════════════════════
    ROLES MODAL
-
+══════════════════════════════════════════════════════════════════════════ */
 function RolesModal({ onClose, onSend }) {
   const [selected, setSelected] = useState([...ALL_ROLES])
   const toggle = (r) =>
@@ -359,8 +355,6 @@ function RolesModal({ onClose, onSend }) {
             {ALL_ROLES.map(r => (
               <label key={r} className="flex items-center gap-3 cursor-pointer">
                 <input
-                  id={`adm-role-${r}`}
-                  name={`adm-role-${r}`}
                   type="checkbox"
                   checked={selected.includes(r)}
                   onChange={() => toggle(r)}
@@ -388,9 +382,9 @@ function RolesModal({ onClose, onSend }) {
   )
 }
 
-
+/* ══════════════════════════════════════════════════════════════════════════
    AI COPILOT PANEL
-
+══════════════════════════════════════════════════════════════════════════ */
 function AICopilot({ events }) {
   const [subTab,       setSubTab]       = useState('chat')
   const [messages,     setMessages]     = useState([
@@ -406,7 +400,7 @@ function AICopilot({ events }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, thinking])
 
-  /* -- Real Gemini chat ------------------------------------------------ */
+  /* ── Real Gemini chat ──────────────────────────────────────────────── */
   const sendMessage = async (text) => {
     const q = text || input
     if (!q.trim()) return
@@ -428,7 +422,7 @@ function AICopilot({ events }) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
   }
 
-  /* -- Rule-based feedback analyzer ----------------------------------- */
+  /* ── Rule-based feedback analyzer ─────────────────────────────────── */
   const POSITIVE = ['great','amazing','loved','excellent','wonderful','fantastic','good','enjoyed','awesome','helpful','best','outstanding','perfect','brilliant']
   const NEGATIVE  = ['bad','poor','terrible','horrible','boring','disappointed','worst','awful','slow','confusing','broken','issues','problem','wrong']
 
@@ -456,7 +450,7 @@ function AICopilot({ events }) {
     })
   }
 
-  /* -- Memos for recommender ------------------------------------------- */
+  /* ── Memos for recommender ─────────────────────────────────────────── */
   const topEvent = useMemo(() => {
     if (!events.length) return null
     return [...events].sort((a, b) => (b.seatsBooked || 0) - (a.seatsBooked || 0))[0]
@@ -500,7 +494,7 @@ function AICopilot({ events }) {
         ))}
       </div>
 
-      {/* -- AI Chat -- */}
+      {/* ── AI Chat ── */}
       {subTab === 'chat' && (
         <div className="editorial-frame flex flex-col" style={{ height: '520px' }}>
           <div className="flex items-center gap-2 p-3 hairline-b">
@@ -562,8 +556,6 @@ function AICopilot({ events }) {
 
           <div className="flex gap-2 p-3 hairline-t">
             <input
-              id="ai-chat-input"
-              name="aiMessage"
               type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
@@ -571,7 +563,6 @@ function AICopilot({ events }) {
               placeholder="Ask anything about your events…"
               className="flex-1 px-3 py-2 text-sm bg-transparent"
               disabled={thinking}
-              autoComplete="off"
             />
             <button
               onClick={() => sendMessage()}
@@ -584,7 +575,7 @@ function AICopilot({ events }) {
         </div>
       )}
 
-      {/* -- Feedback Analyzer -- */}
+      {/* ── Feedback Analyzer ── */}
       {subTab === 'feedback' && (
         <div className="space-y-4">
           <div className="editorial-frame p-5 space-y-4">
@@ -595,8 +586,6 @@ function AICopilot({ events }) {
               </p>
             </div>
             <textarea
-              id="feedback-text"
-              name="feedbackText"
               rows={6}
               value={feedbackTxt}
               onChange={e => setFeedbackTxt(e.target.value)}
@@ -672,7 +661,7 @@ function AICopilot({ events }) {
         </div>
       )}
 
-      {/* -- Event Recommender -- */}
+      {/* ── Event Recommender ── */}
       {subTab === 'recommend' && (
         <div className="space-y-4">
           {topEvent && (
@@ -749,75 +738,24 @@ function AICopilot({ events }) {
   )
 }
 
-
-   CUSTOM EVENT SELECT  (shared — avoids OS native dropdown styling)
-
-function AdminEventSelect({ events, value, onChange, placeholder = '— Select an event —' }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  const selected = events.find(e => e._id === value)
-
-  useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  return (
-    <div ref={ref} className="relative" style={{ maxWidth: '360px' }}>
-      <button type="button" onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-3 py-2.5 text-sm hairline-all bg-card hover:bg-secondary/30 transition-colors">
-        <span className={selected ? 'text-foreground font-medium' : 'text-muted-foreground'}>
-          {selected ? selected.title : placeholder}
-        </span>
-        <ChevronRight className={cn('w-4 h-4 text-muted-foreground transition-transform shrink-0 ml-2', open && 'rotate-90')} />
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.12 }}
-            className="absolute top-full left-0 right-0 z-50 bg-card hairline-all shadow-lg max-h-60 overflow-y-auto">
-            {events.length === 0 && (
-              <div className="px-3 py-3 text-sm text-muted-foreground">No events available</div>
-            )}
-            {events.map(ev => (
-              <button key={ev._id} type="button" onClick={() => { onChange(ev._id); setOpen(false) }}
-                className={cn(
-                  'w-full text-left px-3 py-2.5 text-sm transition-colors flex items-center justify-between gap-2',
-                  ev._id === value ? 'bg-foreground text-background' : 'hover:bg-secondary/50 text-foreground'
-                )}>
-                <span className="truncate">{ev.title}</span>
-                <span className={cn('micro-badge shrink-0 text-[9px]',
-                  ev._id === value ? 'bg-background/20 text-background' :
-                  ev.status === 'upcoming' ? 'micro-badge-accent' : 'micro-badge'
-                )}>{ev.status}</span>
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
-
+/* ══════════════════════════════════════════════════════════════════════════
    MAIN ADMIN DASHBOARD
-
+══════════════════════════════════════════════════════════════════════════ */
 export default function AdminDashboard() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
-  /* -- core state ----------------------------------------------------- */
+  /* ── core state ───────────────────────────────────────────────────── */
   const [activeTab,   setActiveTab]   = useState('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  /* -- data state ----------------------------------------------------- */
+  /* ── data state ───────────────────────────────────────────────────── */
   const [stats,   setStats]   = useState(null)
   const [events,  setEvents]  = useState([])
   const [users,   setUsers]   = useState([])
   const [gallery, setGallery] = useState([])
 
-  /* -- loading / misc ------------------------------------------------- */
+  /* ── loading / misc ───────────────────────────────────────────────── */
   const [loading,          setLoading]          = useState(true)
   const [refreshing,       setRefreshing]        = useState(false)
   const [eventModal,       setEventModal]        = useState(null)   // null | 'create' | event-obj
@@ -829,7 +767,7 @@ export default function AdminDashboard() {
   const [selectedEventId,  setSelectedEventId]   = useState('')
   const [sendingAnnounce,  setSendingAnnounce]   = useState(false)
 
-  /* -- fetch data ----------------------------------------------------- */
+  /* ── fetch data ───────────────────────────────────────────────────── */
   const fetchAll = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     else setRefreshing(true)
@@ -852,9 +790,12 @@ export default function AdminDashboard() {
     }
   }, [])
 
-  useEffect(() => { fetchAll() }, [fetchAll])
+  useEffect(() => { 
+    const run = async () => { await fetchAll() }
+    run()
+  }, [fetchAll])
 
-  /* -- event handlers ------------------------------------------------- */
+  /* ── event handlers ───────────────────────────────────────────────── */
   const handleApprove = async (id) => {
     try {
       await eventsApi.approve(id)
@@ -894,14 +835,6 @@ export default function AdminDashboard() {
       setUsers(us => us.map(u => u._id === id ? { ...u, suspended: data.user?.suspended ?? !u.suspended } : u))
       toast.success('User status updated')
     } catch { toast.error('Failed to update user') }
-  }
-
-  const handleChangeRole = async (id, newRole) => {
-    try {
-      await adminApi.changeRole(id, newRole)
-      setUsers(us => us.map(u => u._id === id ? { ...u, role: newRole } : u))
-      toast.success(`Role updated to ${newRole}`)
-    } catch { toast.error('Failed to update role') }
   }
 
   const handleGalleryUpload = async (e) => {
@@ -947,7 +880,7 @@ export default function AdminDashboard() {
     navigate('/login')
   }
 
-  /* -- computed overview data ---------------------------------------- */
+  /* ── computed overview data ──────────────────────────────────────── */
   const pendingEvents = useMemo(() => events.filter(e => e.status === 'pending'), [events])
 
   const kpiCards = useMemo(() => [
@@ -1000,7 +933,7 @@ export default function AdminDashboard() {
       .slice(0, 5)
   }, [events])
 
-  /* -- loading screen ------------------------------------------------- */
+  /* ── loading screen ───────────────────────────────────────────────── */
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -1012,13 +945,13 @@ export default function AdminDashboard() {
     )
   }
 
-
+  /* ════════════════════════════════════════════════════════════════════
      RENDER
-
+  ════════════════════════════════════════════════════════════════════ */
   return (
     <div className="min-h-screen bg-background flex">
 
-      {/* -- Mobile overlay --------------------------------------------- */}
+      {/* ── Mobile overlay ───────────────────────────────────────────── */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
@@ -1029,7 +962,7 @@ export default function AdminDashboard() {
         )}
       </AnimatePresence>
 
-      {/* -- Sidebar ---------------------------------------------------- */}
+      {/* ── Sidebar ──────────────────────────────────────────────────── */}
       <aside className={cn(
         'fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-card hairline-r flex flex-col shrink-0 overflow-y-auto',
         'transition-transform duration-300 lg:translate-x-0',
@@ -1089,7 +1022,7 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* -- Main content ----------------------------------------------- */}
+      {/* ── Main content ─────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Top bar */}
@@ -1131,9 +1064,9 @@ export default function AdminDashboard() {
         <main className="flex-1 overflow-y-auto p-6">
           <AnimatePresence mode="wait">
 
-            {/* ---------------------------------------------------
+            {/* ═══════════════════════════════════════════════════
                 OVERVIEW
-            --------------------------------------------------- */}
+            ═══════════════════════════════════════════════════ */}
             {activeTab === 'overview' && (
               <motion.div
                 key="overview"
@@ -1338,18 +1271,18 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
-            {/* ---------------------------------------------------
+            {/* ═══════════════════════════════════════════════════
                 AI COPILOT
-            --------------------------------------------------- */}
+            ═══════════════════════════════════════════════════ */}
             {activeTab === 'ai' && (
               <motion.div key="ai" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <AICopilot events={events} />
               </motion.div>
             )}
 
-            {/* ---------------------------------------------------
+            {/* ═══════════════════════════════════════════════════
                 EVENTS
-            --------------------------------------------------- */}
+            ═══════════════════════════════════════════════════ */}
             {activeTab === 'events' && (
               <motion.div
                 key="events"
@@ -1457,9 +1390,9 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
-            {/* ---------------------------------------------------
+            {/* ═══════════════════════════════════════════════════
                 FLOOR PLANS
-            --------------------------------------------------- */}
+            ═══════════════════════════════════════════════════ */}
             {activeTab === 'floorplan' && (
               <motion.div
                 key="floorplan"
@@ -1469,11 +1402,36 @@ export default function AdminDashboard() {
                 <div className="editorial-frame p-5 space-y-4">
                   <div>
                     <p className="meta-text mb-2">Select Event</p>
-                    <AdminEventSelect
-                      events={events}
-                      value={selectedEventId}
-                      onChange={setSelectedEventId}
-                    />
+                    <div className="relative" style={{ maxWidth: '360px' }}>
+                      <select
+                        value={selectedEventId}
+                        onChange={e => setSelectedEventId(e.target.value)}
+                        style={{
+                          WebkitAppearance: 'none',
+                          MozAppearance:    'none',
+                          appearance:       'none',
+                          background:       'var(--card)',
+                          color:            'var(--foreground)',
+                          border:           '1px solid var(--border)',
+                          borderRadius:     '0',
+                          width:            '100%',
+                          height:           '40px',
+                          padding:          '0 2.5rem 0 0.75rem',
+                          fontSize:         '0.875rem',
+                          fontFamily:       'Inter, sans-serif',
+                          outline:          'none',
+                          cursor:           'pointer',
+                        }}
+                      >
+                        <option value="">— Select an event —</option>
+                        {events.map(ev => (
+                          <option key={ev._id} value={ev._id}>{ev.title}</option>
+                        ))}
+                      </select>
+                      <ChevronRight
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none rotate-90"
+                      />
+                    </div>
                   </div>
 
                   {selectedEventId ? (
@@ -1488,81 +1446,11 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
-            {/* ---------------------------------------------------
+            {/* ═══════════════════════════════════════════════════
                 USERS
-            --------------------------------------------------- */}
+            ═══════════════════════════════════════════════════ */}
             {activeTab === 'users' && (
-              <motion.div key="users" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
-
-                {/* -- Organizers section -- */}
-                <div className="editorial-frame">
-                  <div className="flex items-center justify-between p-4 hairline-b">
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-accent" />
-                      <span className="meta-text">Organizers ({users.filter(u => u.role === 'organizer').length})</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground hidden sm:block">
-                      Promote participants to organizer or revoke organizer role
-                    </p>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="hairline-b bg-secondary">
-                        <tr>
-                          {['Name', 'Email', 'Status', 'Actions'].map(h => (
-                            <th key={h} className="text-left px-4 py-2.5 meta-text font-semibold">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {users.filter(u => u.role === 'organizer').map(u => (
-                          <tr key={u._id} className="hover:bg-secondary/50 transition-colors">
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 bg-accent text-accent-foreground rounded-full flex items-center justify-center text-xs font-black shrink-0">
-                                  {u.name?.[0]?.toUpperCase() || '?'}
-                                </div>
-                                <span className="font-medium truncate max-w-30">{u.name}</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
-                            <td className="px-4 py-3">
-                              <span className={cn('micro-badge', u.suspended ? 'micro-badge-destructive' : 'micro-badge-accent')}>
-                                {u.suspended ? 'Suspended' : 'Active'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => handleChangeRole(u._id, 'participant')}
-                                  className="btn-editorial btn-editorial-outline text-xs text-destructive"
-                                  title="Revoke organizer role"
-                                >
-                                  <Trash2 className="w-3 h-3" /> Revoke
-                                </button>
-                                <button
-                                  onClick={() => handleToggleUser(u._id)}
-                                  className={cn('btn-editorial text-xs', u.suspended ? 'btn-editorial-accent' : 'btn-editorial-outline')}
-                                >
-                                  {u.suspended ? 'Activate' : 'Suspend'}
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                        {users.filter(u => u.role === 'organizer').length === 0 && (
-                          <tr>
-                            <td colSpan={4} className="text-center py-8 text-muted-foreground text-sm">
-                              No organizers yet. Promote participants below.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* -- All users table -- */}
+              <motion.div key="users" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <div className="editorial-frame">
                   <div className="flex items-center gap-2 p-4 hairline-b">
                     <Users className="w-4 h-4" />
@@ -1572,7 +1460,7 @@ export default function AdminDashboard() {
                     <table className="w-full text-sm">
                       <thead className="hairline-b bg-secondary">
                         <tr>
-                          {['Name', 'Email', 'Role', 'Status', 'Change Role', 'Actions'].map(h => (
+                          {['Name', 'Email', 'Role', 'Status', 'Actions'].map(h => (
                             <th key={h} className="text-left px-4 py-2.5 meta-text font-semibold">{h}</th>
                           ))}
                         </tr>
@@ -1590,35 +1478,12 @@ export default function AdminDashboard() {
                             </td>
                             <td className="px-4 py-3 text-muted-foreground truncate max-w-40">{u.email}</td>
                             <td className="px-4 py-3">
-                              <span className={cn('micro-badge capitalize',
-                                u.role === 'admin' ? 'bg-foreground text-background' :
-                                u.role === 'organizer' ? 'micro-badge-accent' : 'micro-badge'
-                              )}>{u.role}</span>
+                              <span className="micro-badge capitalize">{u.role}</span>
                             </td>
                             <td className="px-4 py-3">
                               <span className={cn('micro-badge', u.suspended ? 'micro-badge-destructive' : 'micro-badge-accent')}>
                                 {u.suspended ? 'Suspended' : 'Active'}
                               </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              {/* Inline role switcher — no native select dropdown */}
-                              <div className="flex items-center gap-1">
-                                {['participant', 'organizer', 'admin'].map(role => (
-                                  <button
-                                    key={role}
-                                    onClick={() => u.role !== role && handleChangeRole(u._id, role)}
-                                    disabled={u.role === role}
-                                    className={cn(
-                                      'px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors hairline-all',
-                                      u.role === role
-                                        ? 'bg-foreground text-background cursor-default'
-                                        : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'
-                                    )}
-                                  >
-                                    {role === 'participant' ? 'Part.' : role === 'organizer' ? 'Org.' : 'Admin'}
-                                  </button>
-                                ))}
-                              </div>
                             </td>
                             <td className="px-4 py-3">
                               <button
@@ -1640,9 +1505,9 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
-            {/* ---------------------------------------------------
+            {/* ═══════════════════════════════════════════════════
                 GALLERY
-            --------------------------------------------------- */}
+            ═══════════════════════════════════════════════════ */}
             {activeTab === 'gallery' && (
               <motion.div
                 key="gallery"
@@ -1662,24 +1527,19 @@ export default function AdminDashboard() {
                         <ImagePlus className="w-4 h-4 shrink-0" />
                         <span className="truncate">{galleryFile ? galleryFile.name : 'Choose file…'}</span>
                         <input
-                          id="gallery-file-input"
-                          name="galleryImage"
                           type="file" accept="image/*" className="hidden"
                           onChange={e => setGalleryFile(e.target.files?.[0] || null)}
                         />
                       </label>
                     </div>
                     <div className="space-y-1 flex-1 min-w-50">
-                      <label htmlFor="gallery-caption" className="meta-text">Caption (optional)</label>
+                      <label className="meta-text">Caption (optional)</label>
                       <input
-                        id="gallery-caption"
-                        name="caption"
                         type="text"
                         value={galleryCaption}
                         onChange={e => setGalleryCaption(e.target.value)}
                         placeholder="Add a caption…"
                         className="w-full px-3 py-2 text-sm bg-transparent"
-                        autoComplete="off"
                       />
                     </div>
                     <button type="submit" disabled={galleryUploading || !galleryFile} className="btn-editorial btn-editorial-primary text-sm">
@@ -1725,9 +1585,9 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
-            {/* ---------------------------------------------------
+            {/* ═══════════════════════════════════════════════════
                 ANNOUNCEMENTS
-            --------------------------------------------------- */}
+            ═══════════════════════════════════════════════════ */}
             {activeTab === 'announcements' && (
               <motion.div
                 key="announcements"
@@ -1743,10 +1603,8 @@ export default function AdminDashboard() {
                     Broadcast a message to all users or target specific roles. Notifications are delivered in-app.
                   </p>
                   <div className="space-y-1">
-                    <label htmlFor="adm-announce" className="meta-text">Message</label>
+                    <label className="meta-text">Message</label>
                     <textarea
-                      id="adm-announce"
-                      name="announcement"
                       rows={5}
                       value={announceTxt}
                       onChange={e => setAnnounceTxt(e.target.value)}
@@ -1805,7 +1663,7 @@ export default function AdminDashboard() {
         </main>
       </div>
 
-      {/* -- Modals ----------------------------------------------------- */}
+      {/* ── Modals ───────────────────────────────────────────────────── */}
       {eventModal && (
         <EventFormModal
           initial={eventModal === 'create' ? null : eventModal}

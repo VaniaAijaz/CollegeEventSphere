@@ -139,7 +139,7 @@ export default function EventDetail() {
       const { data } = await socialApi.toggleBookmark(event._id)
       setBookmarked(data.bookmarked)
       toast.success(data.bookmarked ? 'Event bookmarked' : 'Bookmark removed')
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to update bookmark')
     }
   }
