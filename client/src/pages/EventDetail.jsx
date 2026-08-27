@@ -27,6 +27,17 @@ export default function EventDetail() {
       .finally(() => setLoading(false))
   }, [id])
 
+  // Check if user is already registered
+  useEffect(() => {
+    if (!isAuth || !id) return
+    registrationsApi.getMyReg()
+      .then(({ data }) => {
+        const found = data.registrations.find(r => r.event?._id === id || r.event === id)
+        if (found) setRegistered(true)
+      })
+      .catch(() => {})
+  }, [isAuth, id])
+
   if (loading) return (
     <div className="min-h-screen pt-[72px] flex items-center justify-center bg-background">
       <Loader2 className="w-10 h-10 animate-spin text-primary" />

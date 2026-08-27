@@ -62,6 +62,8 @@ export default function Dashboard() {
   }, [])
 
   if (!isAuth) return <Navigate to="/login" replace />
+  if (user?.role === 'admin')     return <Navigate to="/admin"     replace />
+  if (user?.role === 'organizer') return <Navigate to="/organizer" replace />
 
   const handleLogout = async () => { await logout(); toast.success('Signed out'); navigate('/') }
   const markAllRead  = async () => { await notificationsApi.markAllRead(); setNotifications(n => n.map(x => ({ ...x, read: true }))); setUnread(0) }
