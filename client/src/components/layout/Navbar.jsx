@@ -1,3 +1,4 @@
+import logoIcon from '@/assets/logo-full-transparent.png'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell,
@@ -18,10 +19,10 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
 import { eventsApi, notificationsApi } from '@/lib/api'
+
 import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
@@ -42,24 +43,37 @@ const TYPE_COLORS = {
     'text-sky-600 dark:text-sky-400 bg-sky-100 dark:bg-sky-900/30',
 }
 
+// ── Logo mark — gradient orbit/sphere glyph ──────────────────────────────
+function LogoMark({ className }) {
+  return (
+    <svg viewBox="0 0 40 40" className={className} xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="es-logo-grad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#334155" />
+          <stop offset="100%" stopColor="#0f172a" />
+        </linearGradient>
+      </defs>
+      <rect width="40" height="40" rx="10" fill="url(#es-logo-grad)" />
+      <circle cx="20" cy="20" r="7.5" fill="#f97316" />
+      <ellipse cx="20" cy="20" rx="14" ry="5.5" stroke="#f97316" strokeOpacity="0.75" strokeWidth="1.8" fill="none" />
+      <circle cx="33" cy="20" r="2" fill="#fb923c" />
+    </svg>
+  )
+}
+
 export default function Navbar() {
   const { user, logout, isAuth } = useAuth()
   const { theme, toggle } = useTheme()
-
   const location = useLocation()
   const navigate = useNavigate()
-
   const dropRef = useRef(null)
   const notifRef = useRef(null)
   const searchRef = useRef(null)
-
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userOpen, setUserOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
-
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
-
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -88,14 +102,12 @@ export default function Navbar() {
       ) {
         setUserOpen(false)
       }
-
       if (
         notifRef.current &&
         !notifRef.current.contains(e.target)
       ) {
         setNotifOpen(false)
       }
-
       if (
         searchRef.current &&
         !searchRef.current.contains(e.target)
@@ -103,9 +115,7 @@ export default function Navbar() {
         setShowSuggestions(false)
       }
     }
-
     document.addEventListener('mousedown', handleClickOutside)
-
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
@@ -118,7 +128,6 @@ export default function Navbar() {
       setUnreadCount(0)
       return
     }
-
     notificationsApi
       .getAll()
       .then(({ data }) => {
@@ -132,14 +141,11 @@ export default function Navbar() {
   useEffect(() => {
     const timer = setTimeout(async () => {
       const q = searchQuery.trim().toLowerCase()
-
       if (!q) {
         setSuggestions([])
         return
       }
-
       let results = []
-
       // Static pages
       if ('home'.includes(q) || 'index'.includes(q)) {
         results.push({
@@ -148,7 +154,6 @@ export default function Navbar() {
           to: '/',
         })
       }
-
       if ('events'.includes(q) || 'discover'.includes(q)) {
         results.push({
           type: 'page',
@@ -156,7 +161,6 @@ export default function Navbar() {
           to: '/events',
         })
       }
-
       if (
         'contact'.includes(q) ||
         'help'.includes(q) ||
@@ -168,7 +172,6 @@ export default function Navbar() {
           to: '/contact',
         })
       }
-
       if ('about'.includes(q) || 'who'.includes(q)) {
         results.push({
           type: 'page',
@@ -176,7 +179,6 @@ export default function Navbar() {
           to: '/about',
         })
       }
-
       if (
         'gallery'.includes(q) ||
         'photos'.includes(q) ||
@@ -188,7 +190,6 @@ export default function Navbar() {
           to: '/gallery',
         })
       }
-
       if (
         !isAuth &&
         ('login'.includes(q) || 'sign in'.includes(q))
@@ -199,7 +200,6 @@ export default function Navbar() {
           to: '/login',
         })
       }
-
       if (
         !isAuth &&
         ('register'.includes(q) ||
@@ -212,7 +212,6 @@ export default function Navbar() {
           to: '/register',
         })
       }
-
       if (
         isAuth &&
         ('dashboard'.includes(q) ||
@@ -226,30 +225,25 @@ export default function Navbar() {
           to: dashLink(),
         })
       }
-
       // Dynamic event search
       try {
         const { data } = await eventsApi.getAll({
           search: q,
           limit: 3,
         })
-
         if (data?.events) {
           const eventSuggestions = data.events.map((event) => ({
             type: 'event',
             title: event.title,
             to: `/events/${event._id}`,
           }))
-
           results = [...results, ...eventSuggestions]
         }
       } catch (error) {
         console.error('Event search error:', error)
       }
-
       setSuggestions(results)
     }, 300)
-
     return () => clearTimeout(timer)
   }, [searchQuery, isAuth, user])
 
@@ -263,29 +257,25 @@ export default function Navbar() {
   const markAllRead = async () => {
     try {
       await notificationsApi.markAllRead()
-
       setNotifications((list) =>
         list.map((item) => ({
           ...item,
           read: true,
         }))
       )
-
       setUnreadCount(0)
     } catch (error) {
       console.error('Mark all read error:', error)
     }
   }
 
+
   // Mark individual notification as read
   const markNotificationRead = async (notification) => {
     if (notification.read) return
-
     try {
       await notificationsApi.markRead(notification._id)
-
       setUnreadCount((count) => Math.max(0, count - 1))
-
       setNotifications((list) =>
         list.map((item) =>
           item._id === notification._id
@@ -300,23 +290,18 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="fixed top-0 inset-x-0 z-50 bg-background/90 backdrop-blur-md hairline-b transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 h-[72px] flex items-center justify-between gap-6">
-
+      <header className="fixed top-0 inset-x-0 z-50 bg-background/90 backdrop-blur-md border-b-2 border-border dark:border-border-strong transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-[72px] flex items-center justify-between gap-3 sm:gap-6">
           {/* Logo */}
           <Link
             to="/"
-            className="flex items-center gap-3 shrink-0 group"
+            className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0 group"
           >
-            <div className="w-9 h-9 bg-primary border-2 border-border dark:border-border-strong flex items-center justify-center hover:border-foreground transition-colors rounded-lg">
-              <Zap className="w-5 h-5 text-primary-foreground" />
-            </div>
-
-            <span className="font-extrabold text-[18px] tracking-tight uppercase">
+            <img src={logoIcon} alt="EventSphere" className="w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0 object-contain" />
+            <span className="font-extrabold text-sm sm:text-[18px] tracking-tight uppercase truncate">
               EventSphere
             </span>
           </Link>
-
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-2">
             {NAV_LINKS.map(({ to, label }) => (
@@ -332,26 +317,23 @@ export default function Navbar() {
                   >
                     {label}
                   </span>
+
                 )}
               </NavLink>
             ))}
           </nav>
-
           {/* Right Side */}
-          <div className="flex items-center gap-3">
-
+          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
             {/* Search */}
             <div
               ref={searchRef}
-              className="relative hidden sm:flex items-center"
+              className="relative hidden md:flex items-center"
             >
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
-
                   if (searchQuery.trim()) {
                     setShowSuggestions(false)
-
                     navigate(
                       `/events?search=${encodeURIComponent(
                         searchQuery.trim()
@@ -361,8 +343,7 @@ export default function Navbar() {
                 }}
                 className="flex items-center gap-2 px-4 py-0 text-sm font-medium text-muted-foreground transition-colors rounded-full bg-transparent"
               >
-                <Search className="w-4 h-4 text-muted-foreground" />
-
+                <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 <input
                   value={searchQuery}
                   onChange={(e) => {
@@ -371,17 +352,15 @@ export default function Navbar() {
                   }}
                   onFocus={() => setShowSuggestions(true)}
                   placeholder="Search events, organizers..."
-                  className="bg-transparent border-none outline-none text-foreground py-2 w-48 transition-all"
+                  className="bg-transparent border-none outline-none text-foreground py-2 w-32 lg:w-48 transition-all"
                 />
-
                 <button
                   type="submit"
                   className="hidden lg:inline-block ml-2 text-[10px] font-mono bg-secondary px-1.5 py-0.5 rounded text-foreground hover:bg-foreground hover:text-background transition-colors"
                 >
-                  â†µ
+                  ↵
                 </button>
               </form>
-
               {/* Search Suggestions */}
               <AnimatePresence>
                 {showSuggestions &&
@@ -402,7 +381,7 @@ export default function Navbar() {
                       transition={{
                         duration: 0.15,
                       }}
-                      className="absolute top-full mt-2 w-[320px] right-0 bg-background hairline-all rounded-xl shadow-2xl overflow-hidden z-50"
+                      className="absolute top-full mt-2 w-72 sm:w-[320px] max-w-[calc(100vw-2rem)] right-0 bg-background border-2 border-border dark:border-border-strong rounded-xl shadow-2xl overflow-hidden z-50"
                     >
                       <div className="flex flex-col py-2">
                         {suggestions.map((suggestion, index) => (
@@ -413,19 +392,17 @@ export default function Navbar() {
                               setShowSuggestions(false)
                               setSearchQuery('')
                             }}
-                            className="flex items-center gap-3 px-4 py-3 hover:bg-secondary transition-colors hairline-b last:border-b-0"
+                            className="flex items-center gap-3 px-4 py-3 hover:bg-secondary transition-colors border-b-2 border-border dark:border-border-strong last:border-b-0"
                           >
                             {suggestion.type === 'page' ? (
                               <Zap className="w-4 h-4 text-accent flex-shrink-0" />
                             ) : (
                               <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                             )}
-
                             <div className="flex flex-col min-w-0">
                               <span className="text-sm font-semibold text-foreground truncate">
                                 {suggestion.title}
                               </span>
-
                               <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
                                 {suggestion.type}
                               </span>
@@ -437,11 +414,11 @@ export default function Navbar() {
                   )}
               </AnimatePresence>
             </div>
-
-            {/* Theme Toggle */}
+            {/* Theme Toggle — always visible on every screen size */}
             <button
               onClick={toggle}
-              className="p-2 border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-card rounded-lg flex items-center justify-center"
+              className="p-1.5 sm:p-2 border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg flex items-center justify-center flex-shrink-0"
+
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? (
@@ -450,14 +427,12 @@ export default function Navbar() {
                 <Moon className="w-4 h-4" />
               )}
             </button>
-
             {/* Authenticated User */}
             {isAuth ? (
               <div
-                className="flex items-center gap-2"
+                className="flex items-center gap-1.5 sm:gap-2"
                 ref={dropRef}
               >
-
                 {/* Publish Event */}
                 {(user?.role === 'admin' ||
                   user?.role === 'organizer') && (
@@ -469,16 +444,14 @@ export default function Navbar() {
                     Host Event
                   </Link>
                 )}
-
                 {/* Messages */}
                 <Link
                   to="/messages"
-                  className="hidden md:flex p-2 border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-card rounded-lg items-center justify-center"
+                  className="hidden md:flex p-1.5 sm:p-2 border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg items-center justify-center flex-shrink-0"
                   title="Messages"
                 >
                   <MessageSquare className="w-4 h-4" />
                 </Link>
-
                 {/* Notifications */}
                 <div
                   className="relative"
@@ -486,11 +459,10 @@ export default function Navbar() {
                 >
                   <button
                     onClick={toggleNotifications}
-                    className="relative p-2 border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-card rounded-lg flex items-center justify-center"
+                    className="relative p-1.5 sm:p-2 border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg flex items-center justify-center flex-shrink-0"
                     aria-label="Notifications"
                   >
                     <Bell className="w-4 h-4" />
-
                     {unreadCount > 0 && (
                       <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-destructive text-[10px] font-black text-white border-2 border-background">
                         {unreadCount > 9
@@ -499,7 +471,6 @@ export default function Navbar() {
                       </span>
                     )}
                   </button>
-
                   <AnimatePresence>
                     {notifOpen && (
                       <motion.div
@@ -521,21 +492,18 @@ export default function Navbar() {
                         transition={{
                           duration: 0.15,
                         }}
-                        className="absolute right-0 top-full mt-2 w-80 bg-card border-2 border-border dark:border-border-strong rounded-xl overflow-hidden shadow-xl z-50"
+                        className="absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-card border-2 border-border dark:border-border-strong rounded-xl overflow-hidden shadow-xl z-50"
                       >
-
                         {/* Notification Header */}
                         <div className="flex items-center justify-between px-4 py-3 border-b-2 border-border dark:border-border-strong bg-muted">
                           <p className="font-black text-sm">
                             Notifications
-
                             {unreadCount > 0 && (
                               <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-destructive text-white">
                                 {unreadCount}
                               </span>
                             )}
                           </p>
-
                           {unreadCount > 0 && (
                             <button
                               onClick={markAllRead}
@@ -546,13 +514,11 @@ export default function Navbar() {
                             </button>
                           )}
                         </div>
-
                         {/* Notification List */}
                         <div className="max-h-80 overflow-y-auto">
                           {notifications.length === 0 ? (
                             <div className="py-10 text-center">
                               <Bell className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-
                               <p className="text-xs font-semibold text-muted-foreground">
                                 No notifications
                               </p>
@@ -585,7 +551,6 @@ export default function Navbar() {
                                   >
                                     <Bell className="w-3.5 h-3.5" />
                                   </div>
-
                                   <div className="flex-1 min-w-0">
                                     <p
                                       className={cn(
@@ -597,7 +562,6 @@ export default function Navbar() {
                                     >
                                       {notification.text}
                                     </p>
-
                                     {notification.createdAt && (
                                       <p className="text-[10px] text-muted-foreground mt-1 font-medium">
                                         {new Date(
@@ -614,7 +578,6 @@ export default function Navbar() {
                                       </p>
                                     )}
                                   </div>
-
                                   {!notification.read && (
                                     <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" />
                                   )}
@@ -622,7 +585,6 @@ export default function Navbar() {
                               ))
                           )}
                         </div>
-
                         {/* Notification Footer */}
                         <div className="px-4 py-2.5 border-t-2 border-border dark:border-border-strong bg-muted">
                           <Link
@@ -630,14 +592,14 @@ export default function Navbar() {
                             onClick={() => setNotifOpen(false)}
                             className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
                           >
-                            View dashboard â†’
+
+                            View dashboard →
                           </Link>
                         </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
-
                 {/* User Dropdown */}
                 <div className="relative">
                   <button
@@ -645,20 +607,19 @@ export default function Navbar() {
                       setUserOpen((value) => !value)
                       setNotifOpen(false)
                     }}
-                    className="flex items-center gap-2 px-3 py-1.5 border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-card font-bold text-sm rounded-lg"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 border-2 border-border dark:border-border-strong brut-hover bg-card font-bold text-sm rounded-lg flex-shrink-0"
                   >
-                    <div className="w-8 h-8 bg-foreground rounded-full flex items-center justify-center text-[11px] font-bold text-background uppercase">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-foreground rounded-full flex items-center justify-center text-[11px] font-bold text-background uppercase flex-shrink-0">
                       {user?.name?.[0] || 'U'}
                     </div>
-
                     <ChevronDown
                       className={cn(
                         'w-4 h-4 transition-transform hidden sm:block',
                         userOpen && 'rotate-180'
                       )}
                     />
-                  </button>
 
+                  </button>
                   <AnimatePresence>
                     {userOpen && (
                       <motion.div
@@ -677,20 +638,17 @@ export default function Navbar() {
                         transition={{
                           duration: 0.12,
                         }}
-                        className="absolute right-0 top-full mt-2 w-56 bg-card border-2 border-border dark:border-border-strong overflow-hidden rounded-xl shadow-xl z-50"
+                        className="absolute right-0 top-full mt-2 w-56 max-w-[calc(100vw-2rem)] bg-card border-2 border-border dark:border-border-strong overflow-hidden rounded-xl shadow-xl z-50"
                       >
-
                         {/* User Info */}
                         <div className="px-4 py-4 border-b-2 border-border dark:border-border-strong bg-muted">
                           <p className="font-semibold text-sm truncate">
                             {user?.name}
                           </p>
-
                           <p className="text-xs text-muted-foreground mt-1 capitalize">
                             {user?.role}
                           </p>
                         </div>
-
                         {/* Menu */}
                         <div className="py-2">
                           <Link
@@ -701,7 +659,6 @@ export default function Navbar() {
                             <User className="w-4 h-4 text-muted-foreground" />
                             Dashboard
                           </Link>
-
                           <Link
                             to="/dashboard"
                             onClick={() => setUserOpen(false)}
@@ -710,7 +667,6 @@ export default function Navbar() {
                             <Calendar className="w-4 h-4 text-muted-foreground" />
                             My Events
                           </Link>
-
                           <Link
                             to="/dashboard"
                             onClick={() => setUserOpen(false)}
@@ -720,7 +676,6 @@ export default function Navbar() {
                             Settings
                           </Link>
                         </div>
-
                         {/* Logout */}
                         <div className="border-t-2 border-border dark:border-border-strong py-2">
                           <button
@@ -731,6 +686,7 @@ export default function Navbar() {
                             Sign Out
                           </button>
                         </div>
+
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -741,27 +697,26 @@ export default function Navbar() {
               <div className="hidden md:flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-sm font-bold border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-card rounded-lg"
+                  className="px-4 py-2 text-sm font-bold border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg"
                 >
                   Sign In
                 </Link>
-
                 <Link
                   to="/register"
-                  className="px-4 py-2 text-sm font-bold border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-primary text-primary-foreground rounded-lg"
+                  className="px-4 py-2 text-sm font-bold border-2 border-border dark:border-border-strong brut-hover bg-primary text-primary-foreground rounded-lg"
                 >
                   Get Started
                 </Link>
               </div>
             )}
-
             {/* Mobile Toggle */}
             <button
               onClick={() =>
                 setMobileOpen((value) => !value)
               }
-              className="md:hidden p-2 border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-card rounded-lg flex items-center justify-center"
+              className="md:hidden p-1.5 sm:p-2 border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg flex items-center justify-center flex-shrink-0"
               aria-label="Toggle mobile menu"
+
             >
               {mobileOpen ? (
                 <X className="w-5 h-5" />
@@ -772,7 +727,6 @@ export default function Navbar() {
           </div>
         </div>
       </header>
-
       {/* Mobile Menu */}
       <AnimatePresence>
         {mobileOpen && (
@@ -793,10 +747,9 @@ export default function Navbar() {
               duration: 0.3,
               ease: [0.16, 1, 0.3, 1],
             }}
-            className="fixed top-[72px] inset-x-0 z-40 bg-background hairline-b md:hidden overflow-hidden shadow-2xl"
+            className="fixed top-16 sm:top-[72px] inset-x-0 z-40 bg-background border-b-2 border-border dark:border-border-strong md:hidden overflow-hidden shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto"
           >
-            <div className="px-5 py-6 space-y-4">
-
+            <div className="px-4 sm:px-5 py-6 space-y-4">
               {/* Mobile Navigation */}
               <nav className="flex flex-col gap-2">
                 {NAV_LINKS.map(({ to, label }) => (
@@ -820,30 +773,26 @@ export default function Navbar() {
                   </NavLink>
                 ))}
               </nav>
-
               {/* Authenticated Mobile Actions */}
               {isAuth ? (
                 <div className="flex flex-col gap-2 pt-4 border-t-2 border-border dark:border-border-strong">
-
                   {(user?.role === 'admin' ||
                     user?.role === 'organizer') && (
                     <Link
                       to={dashLink()}
                       onClick={() => setMobileOpen(false)}
-                      className="w-full text-center py-3 text-sm font-bold bg-primary text-primary-foreground rounded-lg"
+                      className="w-full text-center py-3 text-sm font-bold bg-primary text-primary-foreground rounded-lg brut-hover border-2 border-border dark:border-border-strong"
                     >
                       Host Event
                     </Link>
                   )}
-
                   <Link
                     to="/messages"
                     onClick={() => setMobileOpen(false)}
-                    className="w-full text-center py-3 text-sm font-semibold border-2 border-border dark:border-border-strong rounded-lg"
+                    className="w-full text-center py-3 text-sm font-semibold border-2 border-border dark:border-border-strong rounded-lg brut-hover"
                   >
                     Messages
                   </Link>
-
                   <Link
                     to={dashLink()}
                     onClick={() => setMobileOpen(false)}
@@ -851,7 +800,6 @@ export default function Navbar() {
                   >
                     Dashboard
                   </Link>
-
                   <button
                     onClick={() => {
                       logout()
@@ -867,17 +815,17 @@ export default function Navbar() {
                 <div className="flex gap-2 pt-3 mt-2 border-t-2 border-border dark:border-border-strong">
                   <Link
                     to="/login"
-                    className="flex-1 text-center py-2.5 text-sm font-bold border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-card rounded-lg"
+                    className="flex-1 text-center py-2.5 text-sm font-bold border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg"
                   >
                     Sign In
                   </Link>
-
                   <Link
                     to="/register"
-                    className="flex-1 text-center py-2.5 text-sm font-bold border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-primary text-primary-foreground rounded-lg"
+                    className="flex-1 text-center py-2.5 text-sm font-bold border-2 border-border dark:border-border-strong brut-hover bg-primary text-primary-foreground rounded-lg"
                   >
                     Get Started
                   </Link>
+
                 </div>
               )}
             </div>
