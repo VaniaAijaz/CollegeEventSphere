@@ -15,9 +15,9 @@ import { CATEGORIES, DEPARTMENTS } from '@/data/mockData'
 import { cn } from '@/lib/utils'
 import BoothManager from '@/components/booths/BoothManager'
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* --------------------------------------------------------------------------
    CONSTANTS
-══════════════════════════════════════════════════════════════════════════ */
+-------------------------------------------------------------------------- */
 const TABS = [
   { id: 'overview',      label: 'Overview',      icon: BarChart3  },
   { id: 'ai',            label: 'AI Copilot',    icon: Sparkles   },
@@ -36,9 +36,9 @@ const EMPTY_FORM = {
   registrationDeadline: '', waitlistEnabled: false, featured: false, tags: '',
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* --------------------------------------------------------------------------
    SVG CHART PRIMITIVES
-══════════════════════════════════════════════════════════════════════════ */
+-------------------------------------------------------------------------- */
 function Sparkline({ data = [], width = 80, height = 28 }) {
   if (!data.length) return null
   const max = Math.max(...data)
@@ -126,9 +126,9 @@ function DonutChart({ segments = [], size = 100 }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* --------------------------------------------------------------------------
    BADGE & STATUS HELPERS
-══════════════════════════════════════════════════════════════════════════ */
+-------------------------------------------------------------------------- */
 const STATUS_COLORS = {
   upcoming:  'micro-badge-accent',
   pending:   'micro-badge',
@@ -145,9 +145,9 @@ function StatusBadge({ status }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* --------------------------------------------------------------------------
    EVENT FORM MODAL
-══════════════════════════════════════════════════════════════════════════ */
+-------------------------------------------------------------------------- */
 function EventFormModal({ initial, onClose, onSaved }) {
   const [form, setForm] = useState(
     initial
@@ -323,9 +323,9 @@ function EventFormModal({ initial, onClose, onSaved }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* --------------------------------------------------------------------------
    ROLES MODAL
-══════════════════════════════════════════════════════════════════════════ */
+-------------------------------------------------------------------------- */
 function RolesModal({ onClose, onSend }) {
   const [selected, setSelected] = useState([...ALL_ROLES])
   const toggle = (r) =>
@@ -379,9 +379,9 @@ function RolesModal({ onClose, onSend }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* --------------------------------------------------------------------------
    AI COPILOT PANEL
-══════════════════════════════════════════════════════════════════════════ */
+-------------------------------------------------------------------------- */
 function AICopilot({ events }) {
   const [subTab,       setSubTab]       = useState('chat')
   const [messages,     setMessages]     = useState([
@@ -397,7 +397,7 @@ function AICopilot({ events }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, thinking])
 
-  /* ── Real Gemini chat ──────────────────────────────────────────────── */
+  /* -- Real Gemini chat ------------------------------------------------ */
   const sendMessage = async (text) => {
     const q = text || input
     if (!q.trim()) return
@@ -419,7 +419,7 @@ function AICopilot({ events }) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
   }
 
-  /* ── Rule-based feedback analyzer ─────────────────────────────────── */
+  /* -- Rule-based feedback analyzer ----------------------------------- */
   const POSITIVE = ['great','amazing','loved','excellent','wonderful','fantastic','good','enjoyed','awesome','helpful','best','outstanding','perfect','brilliant']
   const NEGATIVE  = ['bad','poor','terrible','horrible','boring','disappointed','worst','awful','slow','confusing','broken','issues','problem','wrong']
 
@@ -447,7 +447,7 @@ function AICopilot({ events }) {
     })
   }
 
-  /* ── Memos for recommender ─────────────────────────────────────────── */
+  /* -- Memos for recommender ------------------------------------------- */
   const topEvent = useMemo(() => {
     if (!events.length) return null
     return [...events].sort((a, b) => (b.seatsBooked || 0) - (a.seatsBooked || 0))[0]
@@ -491,7 +491,7 @@ function AICopilot({ events }) {
         ))}
       </div>
 
-      {/* ── AI Chat ── */}
+      {/* -- AI Chat -- */}
       {subTab === 'chat' && (
         <div className="editorial-frame flex flex-col" style={{ height: '520px' }}>
           <div className="flex items-center gap-2 p-3 hairline-b">
@@ -572,7 +572,7 @@ function AICopilot({ events }) {
         </div>
       )}
 
-      {/* ── Feedback Analyzer ── */}
+      {/* -- Feedback Analyzer -- */}
       {subTab === 'feedback' && (
         <div className="space-y-4">
           <div className="editorial-frame p-5 space-y-4">
@@ -658,7 +658,7 @@ function AICopilot({ events }) {
         </div>
       )}
 
-      {/* ── Event Recommender ── */}
+      {/* -- Event Recommender -- */}
       {subTab === 'recommend' && (
         <div className="space-y-4">
           {topEvent && (
@@ -735,9 +735,9 @@ function AICopilot({ events }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* --------------------------------------------------------------------------
    CUSTOM EVENT SELECT  (shared — avoids OS native dropdown styling)
-══════════════════════════════════════════════════════════════════════════ */
+-------------------------------------------------------------------------- */
 function AdminEventSelect({ events, value, onChange, placeholder = '— Select an event —' }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -786,24 +786,24 @@ function AdminEventSelect({ events, value, onChange, placeholder = '— Select a
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* --------------------------------------------------------------------------
    MAIN ADMIN DASHBOARD
-══════════════════════════════════════════════════════════════════════════ */
+-------------------------------------------------------------------------- */
 export default function AdminDashboard() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
-  /* ── core state ───────────────────────────────────────────────────── */
+  /* -- core state ----------------------------------------------------- */
   const [activeTab,   setActiveTab]   = useState('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  /* ── data state ───────────────────────────────────────────────────── */
+  /* -- data state ----------------------------------------------------- */
   const [stats,   setStats]   = useState(null)
   const [events,  setEvents]  = useState([])
   const [users,   setUsers]   = useState([])
   const [gallery, setGallery] = useState([])
 
-  /* ── loading / misc ───────────────────────────────────────────────── */
+  /* -- loading / misc ------------------------------------------------- */
   const [loading,          setLoading]          = useState(true)
   const [refreshing,       setRefreshing]        = useState(false)
   const [eventModal,       setEventModal]        = useState(null)   // null | 'create' | event-obj
@@ -815,7 +815,7 @@ export default function AdminDashboard() {
   const [selectedEventId,  setSelectedEventId]   = useState('')
   const [sendingAnnounce,  setSendingAnnounce]   = useState(false)
 
-  /* ── fetch data ───────────────────────────────────────────────────── */
+  /* -- fetch data ----------------------------------------------------- */
   const fetchAll = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     else setRefreshing(true)
@@ -840,7 +840,7 @@ export default function AdminDashboard() {
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  /* ── event handlers ───────────────────────────────────────────────── */
+  /* -- event handlers ------------------------------------------------- */
   const handleApprove = async (id) => {
     try {
       await eventsApi.approve(id)
@@ -933,7 +933,7 @@ export default function AdminDashboard() {
     navigate('/login')
   }
 
-  /* ── computed overview data ──────────────────────────────────────── */
+  /* -- computed overview data ---------------------------------------- */
   const pendingEvents = useMemo(() => events.filter(e => e.status === 'pending'), [events])
 
   const kpiCards = useMemo(() => [
@@ -986,7 +986,7 @@ export default function AdminDashboard() {
       .slice(0, 5)
   }, [events])
 
-  /* ── loading screen ───────────────────────────────────────────────── */
+  /* -- loading screen ------------------------------------------------- */
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -998,13 +998,13 @@ export default function AdminDashboard() {
     )
   }
 
-  /* ════════════════════════════════════════════════════════════════════
+  /* --------------------------------------------------------------------
      RENDER
-  ════════════════════════════════════════════════════════════════════ */
+  -------------------------------------------------------------------- */
   return (
     <div className="min-h-screen bg-background flex">
 
-      {/* ── Mobile overlay ───────────────────────────────────────────── */}
+      {/* -- Mobile overlay --------------------------------------------- */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
@@ -1015,7 +1015,7 @@ export default function AdminDashboard() {
         )}
       </AnimatePresence>
 
-      {/* ── Sidebar ──────────────────────────────────────────────────── */}
+      {/* -- Sidebar ---------------------------------------------------- */}
       <aside className={cn(
         'fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-card hairline-r flex flex-col shrink-0 overflow-y-auto',
         'transition-transform duration-300 lg:translate-x-0',
@@ -1075,7 +1075,7 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* ── Main content ─────────────────────────────────────────────── */}
+      {/* -- Main content ----------------------------------------------- */}
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Top bar */}
@@ -1117,9 +1117,9 @@ export default function AdminDashboard() {
         <main className="flex-1 overflow-y-auto p-6">
           <AnimatePresence mode="wait">
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 OVERVIEW
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'overview' && (
               <motion.div
                 key="overview"
@@ -1324,18 +1324,18 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 AI COPILOT
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'ai' && (
               <motion.div key="ai" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <AICopilot events={events} />
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 EVENTS
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'events' && (
               <motion.div
                 key="events"
@@ -1443,9 +1443,9 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 FLOOR PLANS
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'floorplan' && (
               <motion.div
                 key="floorplan"
@@ -1474,13 +1474,13 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 USERS
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'users' && (
               <motion.div key="users" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
 
-                {/* ── Organizers section ── */}
+                {/* -- Organizers section -- */}
                 <div className="editorial-frame">
                   <div className="flex items-center justify-between p-4 hairline-b">
                     <div className="flex items-center gap-2">
@@ -1548,7 +1548,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* ── All users table ── */}
+                {/* -- All users table -- */}
                 <div className="editorial-frame">
                   <div className="flex items-center gap-2 p-4 hairline-b">
                     <Users className="w-4 h-4" />
@@ -1626,9 +1626,9 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 GALLERY
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'gallery' && (
               <motion.div
                 key="gallery"
@@ -1706,9 +1706,9 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 ANNOUNCEMENTS
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'announcements' && (
               <motion.div
                 key="announcements"
@@ -1784,7 +1784,7 @@ export default function AdminDashboard() {
         </main>
       </div>
 
-      {/* ── Modals ───────────────────────────────────────────────────── */}
+      {/* -- Modals ----------------------------------------------------- */}
       {eventModal && (
         <EventFormModal
           initial={eventModal === 'create' ? null : eventModal}

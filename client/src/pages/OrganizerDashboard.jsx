@@ -15,9 +15,9 @@ import { CATEGORIES, DEPARTMENTS } from '@/data/mockData'
 import { cn } from '@/lib/utils'
 import BoothManager from '@/components/booths/BoothManager'
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* --------------------------------------------------------------------------
    CONSTANTS
-══════════════════════════════════════════════════════════════════════════ */
+-------------------------------------------------------------------------- */
 const TABS = [
   { id: 'overview',      label: 'Overview',      icon: BarChart3  },
   { id: 'events',        label: 'My Events',      icon: Calendar   },
@@ -35,9 +35,9 @@ const EMPTY_FORM = {
   registrationDeadline: '', waitlistEnabled: false, featured: false, tags: '',
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* --------------------------------------------------------------------------
    SVG SPARKLINE
-══════════════════════════════════════════════════════════════════════════ */
+-------------------------------------------------------------------------- */
 function Sparkline({ data = [], width = 80, height = 28 }) {
   if (!data.length) return null
   const max = Math.max(...data)
@@ -62,9 +62,9 @@ function Sparkline({ data = [], width = 80, height = 28 }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* --------------------------------------------------------------------------
    STATUS BADGE
-══════════════════════════════════════════════════════════════════════════ */
+-------------------------------------------------------------------------- */
 const STATUS_COLORS = {
   upcoming:  'micro-badge-accent',
   pending:   'micro-badge',
@@ -80,9 +80,9 @@ function StatusBadge({ status }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* --------------------------------------------------------------------------
    CUSTOM EVENT SELECT  (no native dropdown — avoids OS styling issues)
-══════════════════════════════════════════════════════════════════════════ */
+-------------------------------------------------------------------------- */
 function EventSelect({ events, value, onChange, placeholder = '— Select an event —' }) {
   const [open, setOpen] = useState(false)
   const ref  = useRef(null)
@@ -147,7 +147,7 @@ function EventSelect({ events, value, onChange, placeholder = '— Select an eve
 }
 
 
-══════════════════════════════════════════════════════════════════════════ */
+-------------------------------------------------------------------------- */
 function playScanSound(ok) {
   try {
     const Ctx = window.AudioContext || window.webkitAudioContext
@@ -173,9 +173,9 @@ function playScanSound(ok) {
   } catch { /* ignore */ }
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* --------------------------------------------------------------------------
    EVENT FORM MODAL  (create / edit)
-══════════════════════════════════════════════════════════════════════════ */
+-------------------------------------------------------------------------- */
 function EventFormModal({ initial, onClose, onSaved }) {
   const [form, setForm] = useState(
     initial
@@ -355,9 +355,9 @@ function EventFormModal({ initial, onClose, onSaved }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* --------------------------------------------------------------------------
    ROLES MODAL
-══════════════════════════════════════════════════════════════════════════ */
+-------------------------------------------------------------------------- */
 function RolesModal({ onClose, onSend }) {
   const [selected, setSelected] = useState([...ALL_ROLES])
   const toggle = (r) => setSelected(p => p.includes(r) ? p.filter(x => x !== r) : [...p, r])
@@ -393,22 +393,22 @@ function RolesModal({ onClose, onSend }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* --------------------------------------------------------------------------
    MAIN ORGANIZER DASHBOARD
-══════════════════════════════════════════════════════════════════════════ */
+-------------------------------------------------------------------------- */
 export default function OrganizerDashboard() {
   const { user, isAuth, logout } = useAuth()
   const navigate = useNavigate()
 
-  /* ── core ── */
+  /* -- core -- */
   const [activeTab,   setActiveTab]   = useState('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  /* ── data ── */
+  /* -- data -- */
   const [events,        setEvents]        = useState([])
   const [registrations, setRegistrations] = useState({})   // { [eventId]: [] }
 
-  /* ── ui ── */
+  /* -- ui -- */
   const [loading,          setLoading]          = useState(true)
   const [refreshing,       setRefreshing]        = useState(false)
   const [eventModal,       setEventModal]        = useState(null)   // null | 'create' | event-obj
@@ -417,20 +417,20 @@ export default function OrganizerDashboard() {
   const [regEventId,       setRegEventId]        = useState('')
   const [regLoading,       setRegLoading]        = useState(false)
 
-  /* ── attendance ── */
+  /* -- attendance -- */
   const [qrInput,     setQrInput]     = useState('')
   const [verifying,   setVerifying]   = useState(false)
   const [scanMsg,     setScanMsg]     = useState(null)
   const [scanHistory, setScanHistory] = useState([])
 
-  /* ── announcements ── */
+  /* -- announcements -- */
   const [announceTxt,     setAnnounceTxt]     = useState('')
   const [sendingAnnounce, setSendingAnnounce] = useState(false)
 
-  /* ── auth guard ── */
+  /* -- auth guard -- */
   if (!isAuth || user?.role !== 'organizer') return <Navigate to="/login" replace />
 
-  /* ── fetch ── */
+  /* -- fetch -- */
   const fetchEvents = useCallback(async (silent = false) => {
     if (!silent) setLoading(true); else setRefreshing(true)
     try {
@@ -442,7 +442,7 @@ export default function OrganizerDashboard() {
 
   useEffect(() => { fetchEvents() }, [fetchEvents])
 
-  /* ── fetch registrations for a specific event ── */
+  /* -- fetch registrations for a specific event -- */
   const fetchRegistrations = useCallback(async (eventId) => {
     if (!eventId || registrations[eventId]) return
     setRegLoading(true)
@@ -457,7 +457,7 @@ export default function OrganizerDashboard() {
     if (activeTab === 'registrations' && regEventId) fetchRegistrations(regEventId)
   }, [activeTab, regEventId])
 
-  /* ── event handlers ── */
+  /* -- event handlers -- */
   const handleEventSaved = (event, isEdit) => {
     if (isEdit) setEvents(ev => ev.map(e => e._id === event._id ? event : e))
     else        setEvents(ev => [event, ...ev])
@@ -511,7 +511,7 @@ export default function OrganizerDashboard() {
 
   const handleLogout = async () => { await logout(); navigate('/login') }
 
-  /* ── computed ── */
+  /* -- computed -- */
   const pendingEvents  = useMemo(() => events.filter(e => e.status === 'pending'),  [events])
   const upcomingEvents = useMemo(() => events.filter(e => e.status === 'upcoming'), [events])
   const totalReg       = useMemo(() => events.reduce((s, e) => s + (e.seatsBooked || 0), 0), [events])
@@ -533,7 +533,7 @@ export default function OrganizerDashboard() {
       .slice(0, 5)
   }, [events])
 
-  /* ── loading screen ── */
+  /* -- loading screen -- */
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -545,9 +545,9 @@ export default function OrganizerDashboard() {
     )
   }
 
-  /* ════════════════════════════════════════════════════════════════════
+  /* --------------------------------------------------------------------
      RENDER
-  ════════════════════════════════════════════════════════════════════ */
+  -------------------------------------------------------------------- */
   return (
     <div className="min-h-screen bg-background flex">
 
@@ -560,7 +560,7 @@ export default function OrganizerDashboard() {
         )}
       </AnimatePresence>
 
-      {/* ── Sidebar ── */}
+      {/* -- Sidebar -- */}
       <aside className={cn(
         'fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-card hairline-r flex flex-col shrink-0 overflow-y-auto',
         'transition-transform duration-300 lg:translate-x-0',
@@ -614,7 +614,7 @@ export default function OrganizerDashboard() {
         </div>
       </aside>
 
-      {/* ── Main content ── */}
+      {/* -- Main content -- */}
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Top bar */}
@@ -645,9 +645,9 @@ export default function OrganizerDashboard() {
         <main className="flex-1 overflow-y-auto p-6">
           <AnimatePresence mode="wait">
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 OVERVIEW
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'overview' && (
               <motion.div key="overview" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
 
@@ -791,9 +791,9 @@ export default function OrganizerDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 MY EVENTS
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'events' && (
               <motion.div key="events" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
 
@@ -888,9 +888,9 @@ export default function OrganizerDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 FLOOR PLANS / BOOTHS
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'booths' && (
               <motion.div key="booths" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
                 <div className="editorial-frame p-5 space-y-4">
@@ -915,9 +915,9 @@ export default function OrganizerDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 ATTENDANCE
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'attendance' && (
               <motion.div key="attendance" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <div className="grid lg:grid-cols-12 gap-6">
@@ -1007,9 +1007,9 @@ export default function OrganizerDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 REGISTRATIONS
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'registrations' && (
               <motion.div key="registrations" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
                 <div className="editorial-frame p-5">
@@ -1092,9 +1092,9 @@ export default function OrganizerDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 ANNOUNCEMENTS
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'announcements' && (
               <motion.div key="announcements" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="max-w-2xl space-y-4">
                 <div className="editorial-frame p-5 space-y-4">
@@ -1148,7 +1148,7 @@ export default function OrganizerDashboard() {
         </main>
       </div>
 
-      {/* ── Modals ── */}
+      {/* -- Modals -- */}
       {eventModal && (
         <EventFormModal
           initial={eventModal === 'create' ? null : eventModal}
