@@ -4,10 +4,10 @@ import { useRef } from 'react'
 import { Link } from 'react-router-dom'
 
 const TEAM = [
-  { name: 'Dr. Priya Sharma', role: 'Project Lead',    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya' },
-  { name: 'Arjun Mehta',     role: 'Full-Stack Dev',  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun' },
-  { name: 'Sneha Patel',     role: 'UI/UX Designer',  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sneha' },
-  { name: 'Rohan Das',       role: 'Backend Dev',     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rohan' },
+  { name: 'Waniya Aijaz',    role: 'Project Lead',    avatar: '/avatars/waniya.svg' },
+  { name: 'Ahsan Uddin',     role: 'Full-Stack Dev',  avatar: '/avatars/ahsan.svg' },
+  { name: 'Mohd. Fouzan',    role: 'UI/UX Designer',  avatar: '/avatars/fouzan.svg' },
+  { name: 'Taimoor Khan',    role: 'Backend Dev',     avatar: '/avatars/taimoor.svg' },
 ]
 
 const VALUES = [
@@ -121,7 +121,7 @@ export default function About() {
               <Reveal key={name} delay={i * 0.1} className="bg-background">
                 <div className="p-10 text-center editorial-frame border-foreground hover:bg-secondary/10 transition-colors">
                   <div className="relative w-32 h-32 mx-auto mb-8">
-                    <img src={avatar} alt={name} className="relative w-32 h-32 bg-muted editorial-frame border-foreground object-cover" />
+                    <img src={avatar} alt={name} className="relative w-32 h-32 bg-muted editorial-frame border-foreground object-cover transition-all duration-300 hover:scale-110 hover:-translate-y-2 hover:rotate-3 shadow-[0_0_15px_rgba(0,0,0,0.1)] hover:shadow-[0_10px_25px_rgba(0,0,0,0.2)]" />
                   </div>
                 <div className="font-extrabold text-2xl mb-2">{name}</div>
                 <div className="meta-text text-muted-foreground">{role}</div>

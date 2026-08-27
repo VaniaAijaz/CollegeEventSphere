@@ -107,8 +107,13 @@ function EventFormModal({ initial, onClose, onSaved }) {
   const field = (label, key, type = 'text', placeholder = '') => (
     <div className="space-y-2">
       <label className="meta-text text-muted-foreground">{label}</label>
-      <input type={type} value={form[key]} onChange={e => set(key, e.target.value)}
-        placeholder={placeholder} required={['title','description','date','time','endTime','venue','totalSeats'].includes(key)}
+      <input 
+        type={type} 
+        value={form[key]} 
+        onChange={e => set(key, e.target.value)}
+        placeholder={placeholder} 
+        required={['title','description','date','time','endTime','venue','totalSeats'].includes(key)}
+        min={type === 'date' ? new Date().toISOString().split('T')[0] : undefined}
         className="editorial-input w-full"
       />
     </div>

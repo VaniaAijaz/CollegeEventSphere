@@ -21,6 +21,8 @@ import boothRoutes        from './routes/boothRoutes.js'
 import chatbotRoutes      from './routes/chatbotRoutes.js'
 import captionRoutes      from './routes/captionRoutes.js'
 import contactRoutes      from './routes/contactRoutes.js'
+import reviewRoutes       from './routes/reviewRoutes.js'
+import './utils/cronJobs.js'
 
 // ── __dirname setup (ES modules) ─────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url)
@@ -75,6 +77,7 @@ app.use('/api/booths',        boothRoutes)
 app.use('/api/chatbot',       chatbotRoutes)
 app.use('/api/captions',      captionRoutes)
 app.use('/api/contact',       contactRoutes)
+app.use('/api/reviews',       reviewRoutes)
 
 // ── Health check ─────────────────────────────────────────────────────────
 app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: Date.now() }))

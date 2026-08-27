@@ -308,7 +308,7 @@ export default function Navbar() {
             to="/"
             className="flex items-center gap-3 shrink-0 group"
           >
-            <div className="w-9 h-9 bg-primary border-2 border-border dark:border-border-strong flex items-center justify-center brut-hover rounded-lg">
+            <div className="w-9 h-9 bg-primary border-2 border-border dark:border-border-strong flex items-center justify-center hover:border-foreground transition-colors rounded-lg">
               <Zap className="w-5 h-5 text-primary-foreground" />
             </div>
 
@@ -378,7 +378,7 @@ export default function Navbar() {
                   type="submit"
                   className="hidden lg:inline-block ml-2 text-[10px] font-mono bg-secondary px-1.5 py-0.5 rounded text-foreground hover:bg-foreground hover:text-background transition-colors"
                 >
-                  ↵
+                  â†µ
                 </button>
               </form>
 
@@ -441,7 +441,7 @@ export default function Navbar() {
             {/* Theme Toggle */}
             <button
               onClick={toggle}
-              className="p-2 border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg flex items-center justify-center"
+              className="p-2 border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-card rounded-lg flex items-center justify-center"
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? (
@@ -462,18 +462,18 @@ export default function Navbar() {
                 {(user?.role === 'admin' ||
                   user?.role === 'organizer') && (
                   <Link
-                    to="/events/new"
+                    to={dashLink()}
                     className="hidden lg:flex btn-editorial btn-editorial-accent py-2 px-4 text-xs h-9 items-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
-                    Publish Event
+                    Host Event
                   </Link>
                 )}
 
                 {/* Messages */}
                 <Link
                   to="/messages"
-                  className="hidden md:flex p-2 border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg items-center justify-center"
+                  className="hidden md:flex p-2 border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-card rounded-lg items-center justify-center"
                   title="Messages"
                 >
                   <MessageSquare className="w-4 h-4" />
@@ -486,7 +486,7 @@ export default function Navbar() {
                 >
                   <button
                     onClick={toggleNotifications}
-                    className="relative p-2 border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg flex items-center justify-center"
+                    className="relative p-2 border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-card rounded-lg flex items-center justify-center"
                     aria-label="Notifications"
                   >
                     <Bell className="w-4 h-4" />
@@ -630,7 +630,7 @@ export default function Navbar() {
                             onClick={() => setNotifOpen(false)}
                             className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
                           >
-                            View dashboard →
+                            View dashboard â†’
                           </Link>
                         </div>
                       </motion.div>
@@ -645,7 +645,7 @@ export default function Navbar() {
                       setUserOpen((value) => !value)
                       setNotifOpen(false)
                     }}
-                    className="flex items-center gap-2 px-3 py-1.5 border-2 border-border dark:border-border-strong brut-hover bg-card font-bold text-sm rounded-lg"
+                    className="flex items-center gap-2 px-3 py-1.5 border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-card font-bold text-sm rounded-lg"
                   >
                     <div className="w-8 h-8 bg-foreground rounded-full flex items-center justify-center text-[11px] font-bold text-background uppercase">
                       {user?.name?.[0] || 'U'}
@@ -741,14 +741,14 @@ export default function Navbar() {
               <div className="hidden md:flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-sm font-bold border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg"
+                  className="px-4 py-2 text-sm font-bold border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-card rounded-lg"
                 >
                   Sign In
                 </Link>
 
                 <Link
                   to="/register"
-                  className="px-4 py-2 text-sm font-bold border-2 border-border dark:border-border-strong brut-hover bg-primary text-primary-foreground rounded-lg"
+                  className="px-4 py-2 text-sm font-bold border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-primary text-primary-foreground rounded-lg"
                 >
                   Get Started
                 </Link>
@@ -760,7 +760,7 @@ export default function Navbar() {
               onClick={() =>
                 setMobileOpen((value) => !value)
               }
-              className="md:hidden p-2 border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg flex items-center justify-center"
+              className="md:hidden p-2 border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-card rounded-lg flex items-center justify-center"
               aria-label="Toggle mobile menu"
             >
               {mobileOpen ? (
@@ -828,11 +828,11 @@ export default function Navbar() {
                   {(user?.role === 'admin' ||
                     user?.role === 'organizer') && (
                     <Link
-                      to="/events/new"
+                      to={dashLink()}
                       onClick={() => setMobileOpen(false)}
                       className="w-full text-center py-3 text-sm font-bold bg-primary text-primary-foreground rounded-lg"
                     >
-                      Publish Event
+                      Host Event
                     </Link>
                   )}
 
@@ -867,14 +867,14 @@ export default function Navbar() {
                 <div className="flex gap-2 pt-3 mt-2 border-t-2 border-border dark:border-border-strong">
                   <Link
                     to="/login"
-                    className="flex-1 text-center py-2.5 text-sm font-bold border-2 border-border dark:border-border-strong brut-hover bg-card rounded-lg"
+                    className="flex-1 text-center py-2.5 text-sm font-bold border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-card rounded-lg"
                   >
                     Sign In
                   </Link>
 
                   <Link
                     to="/register"
-                    className="flex-1 text-center py-2.5 text-sm font-bold border-2 border-border dark:border-border-strong brut-hover bg-primary text-primary-foreground rounded-lg"
+                    className="flex-1 text-center py-2.5 text-sm font-bold border-2 border-border dark:border-border-strong hover:border-foreground transition-colors bg-primary text-primary-foreground rounded-lg"
                   >
                     Get Started
                   </Link>

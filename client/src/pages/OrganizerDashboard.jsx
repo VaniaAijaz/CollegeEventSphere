@@ -1,6 +1,6 @@
 import { format } from 'date-fns'
-import { motion } from 'framer-motion'
-import { Calendar, CheckCircle2, Clock, LayoutGrid, Loader2, Plus, QrCode, Sparkles, TrendingUp, Users, X, Zap } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Bell, Calendar, CheckCircle2, Clock, LayoutGrid, Loader2, Plus, QrCode, Sparkles, TrendingUp, Users, X, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -86,7 +86,7 @@ function StatCard({ label, value, icon: Icon, i }) {
     </motion.div>
   )
 }
-// ── Sound Feedback ───────────────────────────────────────────────────────
+// â”€â”€ Sound Feedback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function playScanSound(success) {
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext
@@ -179,7 +179,7 @@ export default function OrganizerDashboard() {
       Object.entries(newEvent).forEach(([k, v]) => v && fd.append(k, v))
       const { data } = await eventsApi.create(fd)
       setEvents(p => [data.event, ...p])
-      toast.success('Event submitted for admin approval! ✅')
+      toast.success('Event submitted for admin approval! âœ…')
       setShowCreate(false)
       setNewEvent(EMPTY)
       setCaptionResult(null)
@@ -228,7 +228,7 @@ export default function OrganizerDashboard() {
     }
   }
   const totalReg  = events.reduce((s, e) => s + (e.seatsBooked || 0), 0)
-  const avgRating = events.length ? (events.reduce((s, e) => s + (e.rating || 0), 0) / events.length).toFixed(1) : '—'
+  const avgRating = events.length ? (events.reduce((s, e) => s + (e.rating || 0), 0) / events.length).toFixed(1) : 'â€”'
 
   return (
     <div className="min-h-screen pt-[72px] bg-background">
@@ -323,7 +323,7 @@ export default function OrganizerDashboard() {
                       <div className="min-w-0">
                         <p className="font-extrabold text-xl truncate mb-2">{ev.title}</p>
                         <div className="flex flex-col gap-1 text-sm font-medium text-muted-foreground">
-                          <span>{format(new Date(ev.date), 'MMMM d, yyyy')} · {ev.venue}</span>
+                          <span>{format(new Date(ev.date), 'MMMM d, yyyy')} Â· {ev.venue}</span>
                           <span>{ev.seatsBooked} / {ev.totalSeats} registered</span>
                         </div>
                       </div>
@@ -517,7 +517,13 @@ export default function OrganizerDashboard() {
                 ].map(({ label, key, type }) => (
                   <div key={key} className="space-y-3">
                     <label className="meta-text text-muted-foreground">{label}</label>
-                    <input type={type} value={newEvent[key]} onChange={e => setNewEvent(p => ({ ...p, [key]: e.target.value }))} className="editorial-input w-full" />
+                    <input 
+                      type={type} 
+                      value={newEvent[key]} 
+                      onChange={e => setNewEvent(p => ({ ...p, [key]: e.target.value }))} 
+                      min={type === 'date' ? new Date().toISOString().split('T')[0] : undefined}
+                      className="editorial-input w-full" 
+                    />
                   </div>
                 ))}
               </div>
@@ -543,7 +549,7 @@ export default function OrganizerDashboard() {
                   type="button"
                   onClick={handleGenerateCaption}
                   disabled={generatingCaption || !newEvent.title.trim()}
-                  className="btn-brut text-xs px-4 py-2 mt-1 disabled:opacity-40"
+                  className="btn-editorial btn-editorial-outline text-xs px-4 py-2 mt-1 disabled:opacity-40"
                 >
                   {generatingCaption ? (
                     <><Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> Generating...</>

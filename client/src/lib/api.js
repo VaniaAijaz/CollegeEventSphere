@@ -74,6 +74,16 @@ export const videosApi = {
   delete:        (id)       => api.delete(`/videos/${id}`),
 }
 
+export const boothsApi = {
+  getByEvent: (eventId) => api.get(`/booths/event/${eventId}`),
+  create:     (data)    => api.post('/booths', data),
+  bulkCreate: (data)    => api.post('/booths/bulk', data),
+  update:     (id, data)=> api.patch(`/booths/${id}`, data),
+  delete:     (id)      => api.delete(`/booths/${id}`),
+  book:       (id)      => api.post(`/booths/${id}/book`),
+  cancel:     (id)      => api.delete(`/booths/${id}/book`),
+}
+
 export const adminApi = {
   getStats:     ()            => api.get('/admin/stats'),
   getUsers:     (params)      => api.get('/admin/users', { params }),
@@ -89,6 +99,16 @@ export const socialApi = {
   getMessages:      (userId)       => api.get(`/social/messages/${userId}`),
   sendMessage:      (userId, text) => api.post(`/social/messages/${userId}`, { text }),
   deleteChat:       (userId)       => api.delete(`/social/messages/${userId}`),
+}
+
+export const chatbotApi = {
+  chat: (msg, context) => api.post('/chatbot', { message: msg, context })
+}
+
+export const reviewsApi = {
+  getTop: () => api.get('/reviews'),
+  getByEvent: (eventId) => api.get(`/reviews/${eventId}`),
+  create: (eventId, data) => api.post(`/reviews/${eventId}`, data)
 }
 
 export const contactApi = {

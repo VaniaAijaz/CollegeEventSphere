@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
-import { eventsApi, registrationsApi, videosApi } from '@/lib/api'
+import { eventsApi, registrationsApi, videosApi, reviewsApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 export default function EventDetail() {
@@ -17,9 +17,13 @@ export default function EventDetail() {
   const [event,      setEvent]      = useState(null)
   const [loading,    setLoading]    = useState(true)
   const [registered, setRegistered] = useState(false)
+  const [attended,   setAttended]   = useState(false)
   const [regLoading, setRegLoading] = useState(false)
   const [tab,        setTab]        = useState('details')
   const [highlightVideos, setHighlightVideos] = useState([])
+  const [reviews,    setReviews]    = useState([])
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' })
+  const [submittingReview, setSubmittingReview] = useState(false)
 
   const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')
 
@@ -36,7 +40,10 @@ export default function EventDetail() {
     registrationsApi.getMyReg()
       .then(({ data }) => {
         const found = data.registrations.find(r => r.event?._id === id || r.event === id)
-        if (found) setRegistered(true)
+        if (found) {
+          setRegistered(true)
+          setAttended(!!found.attended)
+        }
       })
       .catch(() => {})
   }, [isAuth, id])
@@ -46,6 +53,10 @@ export default function EventDetail() {
     if (!event?._id) return
     videosApi.getAll({ type: 'event-highlight', event: event._id })
       .then(({ data }) => setHighlightVideos(data.videos || []))
+      .catch(() => {})
+    
+    reviewsApi.getByEvent(event._id)
+      .then(({ data }) => setReviews(data.reviews || []))
       .catch(() => {})
   }, [event?._id])
 
@@ -104,6 +115,32 @@ export default function EventDetail() {
     a.download = `${event.title}.ics`
     a.click()
     toast.success('Calendar file downloaded')
+  }
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault()
+    if (!reviewForm.comment.trim()) {
+      toast.error('Please enter a comment.')
+      return
+    }
+    setSubmittingReview(true)
+    try {
+      const { data } = await reviewsApi.create(event._id, reviewForm)
+      toast.success('Review submitted successfully!')
+      
+      // Update local state
+      setEvent(prev => ({ ...prev, rating: data.eventRating, reviewCount: data.reviewCount }))
+      
+      // Refresh reviews list
+      const res = await reviewsApi.getByEvent(event._id)
+      setReviews(res.data.reviews || [])
+      
+      setReviewForm({ rating: 5, comment: '' })
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit review')
+    } finally {
+      setSubmittingReview(false)
+    }
   }
 
   return (
@@ -234,7 +271,72 @@ export default function EventDetail() {
                       <div className="meta-text text-muted-foreground mt-4">{event.reviewCount} reviews</div>
                     </div>
                   </div>
-                  <p className="text-sm font-medium text-muted-foreground p-6 editorial-frame bg-secondary/10">Reviews become visible exclusively after attendance verification.</p>
+                  
+                  {event.status === 'past' ? (
+                    <div className="mb-12">
+                      {attended ? (
+                        <form onSubmit={handleReviewSubmit} className="p-8 editorial-frame bg-card space-y-6 mb-12">
+                          <h3 className="font-extrabold text-xl tracking-tight">Write a Review</h3>
+                          <div className="space-y-3">
+                            <label className="meta-text text-muted-foreground">Rating</label>
+                            <div className="flex gap-2">
+                              {[1, 2, 3, 4, 5].map(star => (
+                                <button type="button" key={star} onClick={() => setReviewForm(p => ({ ...p, rating: star }))}
+                                  className={cn("w-10 h-10 flex items-center justify-center editorial-frame transition-colors", 
+                                    reviewForm.rating >= star ? 'bg-accent text-accent-foreground' : 'bg-background text-muted-foreground hover:bg-secondary/20'
+                                  )}
+                                >
+                                  <Star className="w-5 h-5 fill-current" />
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="space-y-3">
+                            <label className="meta-text text-muted-foreground">Comment</label>
+                            <textarea rows={4} value={reviewForm.comment} onChange={e => setReviewForm(p => ({ ...p, comment: e.target.value }))}
+                              placeholder="Share your experience..." className="w-full p-4 editorial-frame bg-background text-base resize-none focus:outline-none focus:ring-1 focus:ring-foreground transition-all"
+                            />
+                          </div>
+                          <button type="submit" disabled={submittingReview} className="btn-editorial btn-editorial-primary w-full sm:w-auto px-8">
+                            {submittingReview ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Submit Review'}
+                          </button>
+                        </form>
+                      ) : (
+                        <p className="text-sm font-medium text-muted-foreground p-6 editorial-frame bg-secondary/10 mb-12">
+                          Only verified attendees can leave a review.
+                        </p>
+                      )}
+
+                      <div className="space-y-4">
+                        <h3 className="font-extrabold text-xl tracking-tight mb-6">Recent Reviews</h3>
+                        {reviews.length === 0 ? (
+                          <p className="meta-text text-muted-foreground">No reviews yet. Be the first to share your thoughts!</p>
+                        ) : (
+                          reviews.map(r => (
+                            <div key={r._id} className="p-6 editorial-frame bg-background">
+                              <div className="flex justify-between items-start mb-4">
+                                <div>
+                                  <div className="font-bold">{r.user?.name || 'Anonymous'}</div>
+                                  <div className="text-xs text-muted-foreground">{r.user?.department || 'Student'}</div>
+                                </div>
+                                <div className="flex gap-1">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star key={i} className={cn('w-3.5 h-3.5', i < r.rating ? 'fill-accent text-accent' : 'text-muted-foreground/30')} />
+                                  ))}
+                                </div>
+                              </div>
+                              <p className="text-sm text-foreground/80 leading-relaxed">{r.comment}</p>
+                              <div className="meta-text text-muted-foreground mt-4">{format(new Date(r.createdAt), 'MMM d, yyyy')}</div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm font-medium text-muted-foreground p-6 editorial-frame bg-secondary/10">
+                      Reviews will open automatically once the event has concluded.
+                    </p>
+                  )}
                 </motion.div>
               )}
             </motion.div>

@@ -8,7 +8,7 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import EventCard from '@/components/events/EventCard'
-import { eventsApi, adminApi, videosApi } from '@/lib/api'
+import { eventsApi, adminApi, videosApi, reviewsApi } from '@/lib/api'
 import { TESTIMONIALS, FAQS } from '@/data/mockData'
 
 function Reveal({ children, delay = 0, className = '' }) {
@@ -26,7 +26,7 @@ function Reveal({ children, delay = 0, className = '' }) {
   )
 }
 
-/* ── Magnetic hover wrapper (cursor ke sath ghoomta/uthta hai) ─────────── */
+/* â”€â”€ Magnetic hover wrapper (cursor ke sath ghoomta/uthta hai) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function Magnetic({ children, strength = 18, className = '' }) {
   const ref = useRef(null)
   const [pos, setPos] = useState({ x: 0, y: 0 })
@@ -51,7 +51,7 @@ function Magnetic({ children, strength = 18, className = '' }) {
   )
 }
 
-/* ── Count-up animated stat number ─────────────────────────────────────── */
+/* â”€â”€ Count-up animated stat number â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function useCountUp(rawValue, start, duration = 1700) {
   const [display, setDisplay] = useState('0')
   useEffect(() => {
@@ -97,7 +97,7 @@ function AnimatedStatCard({ s, i }) {
   )
 }
 
-/* ── Live countdown ─────────────────────────────────────────────────── */
+/* â”€â”€ Live countdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function useCountdown(target) {
   const calc = () => {
     const d = new Date(target) - Date.now()
@@ -145,7 +145,7 @@ const STATIC_STATS = [
   { label: 'Departments',         value: '14',    Icon: Building2, bg: 'bg-card', text: 'text-card-foreground' },
 ]
 
-// Fallback video — sirf tab tak chalegi jab tak admin apni koi video upload nahi karta
+// Fallback video â€” sirf tab tak chalegi jab tak admin apni koi video upload nahi karta
 const FALLBACK_HERO_VIDEO = 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
 
 export default function Home() {
@@ -155,6 +155,7 @@ export default function Home() {
   const [stats,     setStats]     = useState(null)
   const [loadingEv, setLoadingEv] = useState(true)
   const [heroVideo, setHeroVideo] = useState(null)
+  const [topReviews, setTopReviews] = useState([])
   const heroRef = useRef(null)
 
   useEffect(() => {
@@ -180,11 +181,15 @@ export default function Home() {
     videosApi.getActiveHero().then(({ data }) => setHeroVideo(data.video)).catch(() => {})
   }, [])
 
+  useEffect(() => {
+    reviewsApi.getTop().then(({ data }) => setTopReviews(data.reviews || [])).catch(() => {})
+  }, [])
+
   const displayStats = stats ? [
-    { label: 'Active Events',       value: stats.activeEvents ?? '—',      Icon: Calendar,  bg: 'bg-primary', text: 'text-primary-foreground' },
-    { label: 'Total Registrations', value: stats.totalRegistrations ?? '—', Icon: Users,     bg: 'bg-secondary', text: 'text-secondary-foreground' },
-    { label: 'Certificates',        value: stats.totalRegistrations ?? '—', Icon: Award,     bg: 'bg-accent', text: 'text-accent-foreground' },
-    { label: 'Total Users',         value: stats.totalUsers ?? '—',        Icon: Building2, bg: 'bg-card', text: 'text-card-foreground' },
+    { label: 'Active Events',       value: stats.activeEvents ?? 'â€”',      Icon: Calendar,  bg: 'bg-primary', text: 'text-primary-foreground' },
+    { label: 'Total Registrations', value: stats.totalRegistrations ?? 'â€”', Icon: Users,     bg: 'bg-secondary', text: 'text-secondary-foreground' },
+    { label: 'Certificates',        value: stats.totalRegistrations ?? 'â€”', Icon: Award,     bg: 'bg-accent', text: 'text-accent-foreground' },
+    { label: 'Total Users',         value: stats.totalUsers ?? 'â€”',        Icon: Building2, bg: 'bg-card', text: 'text-card-foreground' },
   ] : STATIC_STATS
 
   const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')
@@ -192,7 +197,17 @@ export default function Home() {
   // Admin ki upload ki hui video ho to wo, warna fallback demo video
   const videoSrc = heroVideo ? `${API_ROOT}${heroVideo.video_url}` : FALLBACK_HERO_VIDEO
 
-  // cursor spotlight — hero ke andar mouse follow karega
+  const displayReviews = topReviews.length >= 3 
+    ? topReviews.map(r => ({
+        name: r.user?.name || 'Anonymous',
+        role: r.user?.department || 'Student',
+        text: r.comment,
+        rating: r.rating,
+        avatar: r.user?.avatar || `https://api.dicebear.com/7.x/notionists/svg?seed=${r.user?._id || 'demo'}`
+      }))
+    : TESTIMONIALS;
+
+  // cursor spotlight â€” hero ke andar mouse follow karega
   const handleHeroMouseMove = (e) => {
     if (!heroRef.current) return
     const rect = heroRef.current.getBoundingClientRect()
@@ -202,14 +217,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen pt-[72px]">
-      {/* ══════════════════════ HERO — video bg + cursor spotlight ══════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• HERO â€” video bg + cursor spotlight â•â•â•â•â•â• */}
       <section
         ref={heroRef}
         onMouseMove={handleHeroMouseMove}
         className="relative overflow-hidden border-b-2 border-border dark:border-border-strong bg-foreground"
         style={{ '--x': '50%', '--y': '50%' }}
       >
-        {/* Video background — admin ki uploaded video, ya fallback demo video (kabhi khali nahi rahega, loop mein hamesha chalega) */}
+        {/* Video background â€” admin ki uploaded video, ya fallback demo video (kabhi khali nahi rahega, loop mein hamesha chalega) */}
         <video
           key={videoSrc}
           autoPlay muted loop playsInline
@@ -253,7 +268,7 @@ export default function Home() {
               transition={{ delay: 0.28 }}
               className="text-lg sm:text-xl font-semibold text-white/80 max-w-2xl mx-auto mb-10 leading-relaxed"
             >
-              Discover, register and attend every event on campus — hackathons,
+              Discover, register and attend every event on campus â€” hackathons,
               cultural nights, workshops and more. One place, all the action.
             </motion.p>
 
@@ -263,12 +278,12 @@ export default function Home() {
               className="flex flex-wrap items-center justify-center gap-4"
             >
               <Magnetic strength={14}>
-                <Link to="/events" className="btn-brut btn-brut-primary text-base px-8 py-4 gap-3">
+                <Link to="/events" className="btn-editorial btn-editorial-primary text-base px-8 py-4 gap-3">
                   Explore Events <ArrowRight className="w-5 h-5" />
                 </Link>
               </Magnetic>
               <Magnetic strength={14}>
-                <Link to="/register" className="btn-brut bg-white/10 backdrop-blur-md border-white/20 text-white text-base px-8 py-4">
+                <Link to="/register" className="btn-editorial btn-editorial-outline bg-white/10 backdrop-blur-md border-white/20 text-white text-base px-8 py-4">
                   Create an Event
                 </Link>
               </Magnetic>
@@ -283,20 +298,20 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ══════════════════════ STATS STRIP (count-up) ══════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• STATS STRIP (count-up) â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <section className="border-b-2 border-border dark:border-border-strong bg-background">
         <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 divide-x-2 divide-border dark:divide-border-strong">
           {displayStats.map((s, i) => <AnimatedStatCard key={s.label} s={s} i={i} />)}
         </div>
       </section>
 
-      {/* ══════════════════════ UPCOMING EVENTS TICKER/MARQUEE ══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• UPCOMING EVENTS TICKER/MARQUEE â•â•â•â•â•â•â•â•â•â• */}
       {events.length > 0 && (
         <section className="border-b-2 border-border dark:border-border-strong bg-primary text-primary-foreground overflow-hidden py-3">
           <div className="flex whitespace-nowrap ticker-track">
             {[...events, ...events].map((ev, i) => (
               <span key={i} className="mx-6 inline-flex items-center gap-2 text-sm font-black uppercase tracking-wide">
-                <Sparkles className="w-4 h-4 text-accent" /> {ev.title} — {ev.date}
+                <Sparkles className="w-4 h-4 text-accent" /> {ev.title} â€” {ev.date}
                 <span className="mx-6 opacity-40">|</span>
               </span>
             ))}
@@ -312,7 +327,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* ══════════════════════ CATEGORY EXPLORER (magnetic hover) ══════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• CATEGORY EXPLORER (magnetic hover) â•â•â•â•â•â• */}
       <section className="border-b-2 border-border dark:border-border-strong py-24 bg-muted stripe-bg">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <Reveal className="mb-12 text-center">
@@ -341,7 +356,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ══════════════════════ FEATURED EVENTS ══════════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• FEATURED EVENTS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <section className="border-b-2 border-border dark:border-border-strong py-24 bg-background">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <Reveal className="flex items-center justify-between mb-12">
@@ -349,7 +364,7 @@ export default function Home() {
               <p className="text-[13px] font-black uppercase tracking-[0.2em] text-primary mb-2">Upcoming</p>
               <h2 className="text-4xl sm:text-5xl font-black tracking-tighter">Featured Events</h2>
             </div>
-            <Link to="/events" className="btn-brut gap-2 hidden sm:inline-flex text-sm bg-secondary text-secondary-foreground">
+            <Link to="/events" className="btn-editorial btn-editorial-outline gap-2 hidden sm:inline-flex text-sm bg-secondary text-secondary-foreground">
               View All <MoveRight className="w-4 h-4" />
             </Link>
           </Reveal>
@@ -360,7 +375,7 @@ export default function Home() {
               ))}
             </div>
           ) : featured.length === 0 ? (
-            <div className="brut-box p-16 text-center bg-card">
+            <div className="editorial-frame p-16 text-center bg-card">
               <Calendar className="w-12 h-12 mx-auto mb-4 opacity-20" />
               <p className="font-bold text-muted-foreground text-lg">No featured events yet. Check back soon!</p>
             </div>
@@ -383,7 +398,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ══════════════════════ HOW IT WORKS ══════════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• HOW IT WORKS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <section className="border-b-2 border-border dark:border-border-strong bg-foreground text-background">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row">
           <div className="lg:w-1/3 p-10 sm:p-16 border-b-2 lg:border-b-0 lg:border-r-2 border-border dark:border-border-strong flex flex-col justify-center">
@@ -417,7 +432,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ══════════════════════ ALL EVENTS ══════════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• ALL EVENTS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <section className="border-b-2 border-border dark:border-border-strong py-24 bg-muted">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <Reveal className="flex items-end justify-between mb-12">
@@ -425,7 +440,7 @@ export default function Home() {
               <p className="text-[13px] font-black uppercase tracking-[0.2em] text-primary mb-2">Discover</p>
               <h2 className="text-4xl sm:text-5xl font-black tracking-tighter">All Upcoming Events</h2>
             </div>
-            <Link to="/events" className="btn-brut gap-2 hidden sm:inline-flex text-sm bg-card">
+            <Link to="/events" className="btn-editorial btn-editorial-outline gap-2 hidden sm:inline-flex text-sm bg-card">
               Browse All <MoveRight className="w-4 h-4" />
             </Link>
           </Reveal>
@@ -434,10 +449,10 @@ export default function Home() {
               {Array.from({length:6}).map((_,i) => <div key={i} className="border-2 border-border dark:border-border-strong rounded-2xl h-80 shimmer" />)}
             </div>
           ) : events.length === 0 ? (
-            <div className="brut-box p-16 text-center bg-card">
+            <div className="editorial-frame p-16 text-center bg-card">
               <Calendar className="w-12 h-12 mx-auto mb-4 opacity-20" />
               <p className="font-bold text-muted-foreground text-lg">No upcoming events. Check back soon!</p>
-              <Link to="/events" className="btn-brut btn-brut-primary mt-6 inline-flex">Browse All Events</Link>
+              <Link to="/events" className="btn-editorial btn-editorial-primary mt-6 inline-flex">Browse All Events</Link>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -451,7 +466,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ══════════════════════ TESTIMONIALS — auto-scroll carousel ═════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TESTIMONIALS â€” auto-scroll carousel â•â•â•â•â• */}
       <section className="border-b-2 border-border dark:border-border-strong py-24 bg-background overflow-hidden">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <Reveal className="mb-14 text-center">
@@ -460,8 +475,8 @@ export default function Home() {
           </Reveal>
         </div>
         <div className="testimonial-track flex gap-6 px-5">
-          {[...TESTIMONIALS, ...TESTIMONIALS].map((t, i) => (
-            <div key={i} className="p-8 brut-box bg-card flex flex-col w-[340px] flex-shrink-0">
+          {[...displayReviews, ...displayReviews].map((t, i) => (
+            <div key={i} className="p-8 editorial-frame bg-card flex flex-col w-[340px] flex-shrink-0">
               <div className="flex gap-1 mb-6">
                 {Array.from({length: t.rating}).map((_,j) => (
                   <Star key={j} className="w-5 h-5 fill-accent text-accent" />
@@ -488,7 +503,7 @@ export default function Home() {
         `}</style>
       </section>
 
-      {/* ══════════════════════ CTA BANNER ══════════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• CTA BANNER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <section className="py-32 bg-primary text-primary-foreground relative overflow-hidden">
         <div className="absolute inset-0 dot-grid opacity-[0.1]" />
         <div className="relative max-w-7xl mx-auto px-5 sm:px-8 text-center">
@@ -502,12 +517,12 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-5 justify-center">
               <Magnetic strength={12}>
-                <Link to="/register" className="btn-brut bg-accent border-border dark:border-border-strong text-accent-foreground text-lg px-10 py-5 gap-3">
+                <Link to="/register" className="btn-editorial btn-editorial-outline bg-accent border-border dark:border-border-strong text-accent-foreground text-lg px-10 py-5 gap-3">
                   Get Started Free <ArrowRight className="w-5 h-5" />
                 </Link>
               </Magnetic>
               <Magnetic strength={12}>
-                <Link to="/events" className="btn-brut bg-card text-foreground text-lg px-10 py-5">
+                <Link to="/events" className="btn-editorial btn-editorial-outline bg-card text-foreground text-lg px-10 py-5">
                   Browse Events
                 </Link>
               </Magnetic>

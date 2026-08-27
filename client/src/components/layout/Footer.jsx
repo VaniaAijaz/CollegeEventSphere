@@ -31,7 +31,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2">
             <Link to="/" className="flex items-center gap-3 mb-6 w-fit">
-              <div className="w-10 h-10 bg-primary border-2 border-border dark:border-border-strong flex items-center justify-center rounded-lg brut-box-sm">
+              <div className="w-10 h-10 bg-primary border-2 border-border dark:border-border-strong flex items-center justify-center rounded-lg editorial-frame-sm">
                 <Zap className="w-5 h-5 text-primary-foreground" />
               </div>
               <span className="font-black text-2xl tracking-tight">
@@ -39,7 +39,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-muted-foreground text-base leading-relaxed max-w-sm mb-8 font-medium">
-              Your centralized college event platform — discover, register, attend, and celebrate campus life.
+              Your centralized college event platform â€” discover, register, attend, and celebrate campus life.
             </p>
             <div className="space-y-3 text-sm font-semibold text-foreground/80">
               <a href="mailto:info@eventsphere.college" className="flex items-center gap-2.5 hover:text-primary transition-colors w-fit">
@@ -73,7 +73,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm font-bold text-muted-foreground">
-          <p>© {new Date().getFullYear()} EventSphere. Built for Aptech TechWiz 6.</p>
+          <p>Â© {new Date().getFullYear()} EventSphere. Built for Aptech TechWiz 6.</p>
           <div className="flex items-center gap-6">
             <Link to="/about" className="hover:text-primary transition-colors">Privacy</Link>
             <Link to="/about" className="hover:text-primary transition-colors">Terms</Link>
