@@ -1,7 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-
 // POST /api/ai/generate-caption   body: { title, description, category }
 export const generateCaption = async (req, res) => {
   try {
@@ -10,7 +8,8 @@ export const generateCaption = async (req, res) => {
       return res.status(400).json({ message: 'Event title is required' })
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' })
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' })
 
     const prompt = `You are a social media copywriter for a college events platform called EventSphere.
 
@@ -50,6 +49,9 @@ Rules:
     res.json({ success: true, captions: parsed.captions || [], hashtags: parsed.hashtags || [] })
   } catch (err) {
     console.error('Caption generator error:', err)
+    if (err.message?.includes('401') || err.message?.includes('API_KEY')) {
+      return res.status(401).json({ message: 'Invalid Gemini API Key in server configuration.' })
+    }
     res.status(500).json({ message: 'Caption generator is unavailable right now, try again shortly.' })
   }
 }

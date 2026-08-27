@@ -1,8 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import Event from '../models/Event.js'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-
 // Builds a compact text context from live event data
 const buildEventContext = async () => {
   const events = await Event.find({ status: { $in: ['upcoming', 'ongoing'] } })
@@ -47,9 +45,10 @@ export const askChatbot = async (req, res) => {
 
     const context = await buildEventContext()
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' })
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' })
 
-    const userCtx = userProfile 
+    const userCtx = userProfile
       ? `--- USER CONTEXT ---\nThe student asking this is named ${userProfile.name}, in the ${userProfile.department || 'Unknown'} department. Their interests are: ${userProfile.interests?.join(', ') || 'None specified'}. Use this to give personalized event recommendations.\n----------------------\n`
       : ''
 
@@ -68,6 +67,9 @@ Student's question: "${message}"`
     res.json({ success: true, reply })
   } catch (err) {
     console.error('Chatbot error:', err)
+    if (err.message?.includes('401') || err.message?.includes('API_KEY')) {
+      return res.status(401).json({ message: 'Invalid Gemini API Key in server configuration.' })
+    }
     res.status(500).json({ message: 'Chatbot is unavailable right now, try again shortly.' })
   }
 }

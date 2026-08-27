@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
 
-const API_BASE = import.meta.env.VITE_API_URL || ''
+const API_BASE = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace('/api', '')
+  : ''
 
 const WELCOME_MSG = {
   role: 'bot',
@@ -12,7 +14,7 @@ const WELCOME_MSG = {
 }
 
 export default function ChatbotWidget() {
-  const { isAuth, role } = useAuth()
+  const { isAuth, role, user } = useAuth()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState([WELCOME_MSG])
   const [input, setInput] = useState('')

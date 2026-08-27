@@ -20,6 +20,8 @@ services:
     environment:
       - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/CollegeEventSphere}
       - PORT=5000
+    volumes:
+      - server-uploads:/usr/src/app/uploads
     depends_on:
       - mongo
     networks:
@@ -53,6 +55,7 @@ services:
 
 volumes:
   mongo-data:
+  server-uploads:
 
 networks:
   mern_network:

@@ -67,7 +67,7 @@ RULES:
 `
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' })
 
     const result = await model.generateContent([
       { text: systemContext },
@@ -78,7 +78,9 @@ RULES:
     res.json({ success: true, answer })
   } catch (err) {
     console.error('AI error:', err.message)
-    if (err.message?.includes('API_KEY')) return res.status(401).json({ message: 'Invalid Gemini API key' })
+    if (err.message?.includes('401') || err.message?.includes('API_KEY')) {
+      return res.status(401).json({ message: 'Invalid Gemini API Key in server configuration.' })
+    }
     res.status(500).json({ message: 'AI service error: ' + err.message })
   }
 })

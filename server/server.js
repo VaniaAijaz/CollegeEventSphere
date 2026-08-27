@@ -1,4 +1,4 @@
-import 'dotenv/config'
+import dotenv from 'dotenv'
 import dns from 'node:dns'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -22,11 +22,14 @@ import chatbotRoutes      from './routes/chatbotRoutes.js'
 import captionRoutes      from './routes/captionRoutes.js'
 import contactRoutes      from './routes/contactRoutes.js'
 import reviewRoutes       from './routes/reviewRoutes.js'
+import aiRoutes           from './routes/aiRoutes.js'
 import './utils/cronJobs.js'
 
 // ── __dirname setup (ES modules) ─────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url)
 const __dirname  = path.dirname(__filename)
+
+dotenv.config({ path: path.join(__dirname, '../.env') })
 
 dns.setServers(['8.8.8.8'])
 
@@ -78,6 +81,7 @@ app.use('/api/chatbot',       chatbotRoutes)
 app.use('/api/captions',      captionRoutes)
 app.use('/api/contact',       contactRoutes)
 app.use('/api/reviews',       reviewRoutes)
+app.use('/api/ai',            aiRoutes)
 
 // ── Health check ─────────────────────────────────────────────────────────
 app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: Date.now() }))
