@@ -89,6 +89,11 @@ export const adminApi = {
   getUsers:     (params)      => api.get('/admin/users', { params }),
   toggleUser:   (id)          => api.patch(`/admin/users/${id}/toggle`),
   changeRole:   (id, role)    => api.patch(`/admin/users/${id}/role`, { role }),
+  sendAnnounce: (text, roles) => api.post('/notifications/announce', { text, roles }),
+}
+
+export const aiApi = {
+  chat: (message) => api.post('/ai/chat', { message }),
 }
 
 export const socialApi = {
