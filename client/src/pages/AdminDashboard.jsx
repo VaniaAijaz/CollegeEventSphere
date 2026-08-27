@@ -1550,7 +1550,7 @@ export default function AdminDashboard() {
                                 {u.role !== 'participant' && (
                                   <button
                                     onClick={() => handleChangeRole(u._id, 'participant')}
-                                    className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors border border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
+                                    className="btn-editorial btn-editorial-outline text-[10px] px-3 py-1 h-auto"
                                   >
                                     Participant
                                   </button>
@@ -1558,7 +1558,7 @@ export default function AdminDashboard() {
                                 {u.role !== 'organizer' && (
                                   <button
                                     onClick={() => handleChangeRole(u._id, 'organizer')}
-                                    className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors bg-foreground text-background hover:opacity-90"
+                                    className="btn-editorial btn-editorial-primary text-[10px] px-3 py-1 h-auto"
                                   >
                                     Make Organizer
                                   </button>
@@ -1566,7 +1566,7 @@ export default function AdminDashboard() {
                                 {u.role !== 'admin' && (
                                   <button
                                     onClick={() => handleChangeRole(u._id, 'admin')}
-                                    className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors border border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
+                                    className="btn-editorial btn-editorial-outline text-[10px] px-3 py-1 h-auto"
                                   >
                                     Admin
                                   </button>
@@ -1627,7 +1627,7 @@ export default function AdminDashboard() {
                         name="category"
                         value={galleryCategory}
                         onChange={e => setGalleryCategory(e.target.value)}
-                        className="w-full px-3 py-2 text-sm bg-transparent"
+                        className="editorial-input w-full"
                       >
                         {['Workshop', 'Technical', 'Cultural', 'Sports', 'Seminar', 'Annual Day', 'Intercollegiate'].map(option => (
                           <option key={option} value={option}>{option}</option>
@@ -1641,7 +1641,7 @@ export default function AdminDashboard() {
                         value={galleryCaption}
                         onChange={e => setGalleryCaption(e.target.value)}
                         placeholder="Add a caption…"
-                        className="w-full px-3 py-2 text-sm bg-transparent"
+                        className="editorial-input w-full"
                       />
                     </div>
                     <button type="submit" disabled={galleryUploading || !galleryFile} className="btn-editorial btn-editorial-primary text-sm">

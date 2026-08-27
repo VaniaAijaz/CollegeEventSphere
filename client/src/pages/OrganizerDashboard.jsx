@@ -190,7 +190,7 @@ function FormField({ label, name, type = 'text', placeholder = '', form, set, pr
         value={form[name]}
         onChange={e => set(name, e.target.value)}
         placeholder={placeholder}
-        className="w-full px-3 py-2 text-sm bg-transparent"
+        className="editorial-input w-full"
         autoComplete={type === 'date' || type === 'time' ? 'off' : undefined}
       />
     </div>
@@ -205,7 +205,7 @@ function FormSelect({ label, name, options, form, set, prefix = 'evt' }) {
         name={name}
         value={form[name]}
         onChange={e => set(name, e.target.value)}
-        className="w-full px-3 py-2 text-sm bg-card"
+        className="editorial-input w-full"
       >
         <option value="">Select…</option>
         {options.map(o => <option key={o} value={o}>{o}</option>)}
