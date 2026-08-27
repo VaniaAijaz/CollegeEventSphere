@@ -1,89 +1,35 @@
-import { motion, AnimatePresence } from 'framer-motion'
-import { CheckCircle2, Clock, LayoutGrid, Loader2, Shield, Trash2, Users, XCircle, Bell, Settings, ImagePlus, Upload, X } from 'lucide-react'
+import { motion } from 'framer-motion'
+import {
+  CheckCircle2, Clock, Loader2, Shield, Trash2, Users, XCircle, Bell, Settings,
+  ImagePlus, Upload, Video as VideoIcon, PlayCircle
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
-import { adminApi, eventsApi, galleryApi } from '@/lib/api'
+import { adminApi, eventsApi, galleryApi, videosApi } from '@/lib/api'
 import { CATEGORIES } from '@/data/mockData'
 import { cn } from '@/lib/utils'
 
-const ALL_ROLES = ['participant', 'organizer', 'admin']
+const TABS = ['Overview', 'Events', 'Users', 'Gallery', 'Videos', 'Announcements']
 
-const TABS = ['Overview', 'Events', 'Users', 'Gallery', 'Announcements']
-
-function TargetRolesModal({ onClose, onSend, message }) {
-  const [selected, setSelected] = useState(['participant', 'organizer', 'admin'])
-  const [sending, setSending] = useState(false)
-  const toggle = (role) =>
-    setSelected(s => s.includes(role) ? s.filter(r => r !== role) : [...s, role])
-  const handleSend = async () => {
-    if (!selected.length) return toast.error('Select at least one role')
-    setSending(true)
-    await onSend(selected)
-    setSending(false)
-    onClose()
-  }
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-sm bg-card brut-box p-6 space-y-5"
-      >
-        <div className="flex items-center justify-between">
-          <h3 className="font-black text-lg">Target Roles</h3>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        <p className="text-xs font-semibold text-muted-foreground">
-          Send announcement only to selected roles:
-        </p>
-        <div className="space-y-3">
-          {ALL_ROLES.map(role => (
-            <label key={role} className="flex items-center gap-3 cursor-pointer group">
-              <div
-                onClick={() => toggle(role)}
-                className={cn(
-                  'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all',
-                  selected.includes(role)
-                    ? 'bg-foreground border-foreground'
-                    : 'border-border dark:border-border-strong bg-background'
-                )}
-              >
-                {selected.includes(role) && <CheckCircle2 className="w-3 h-3 text-background" />}
-              </div>
-              <span className="text-sm font-black capitalize">{role}</span>
-            </label>
-          ))}
-        </div>
-        <button
-          onClick={handleSend} disabled={sending || !selected.length}
-          className="w-full btn-brut btn-brut-primary justify-center"
-        >
-          {sending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Bell className="w-4 h-4 mr-2" />}
-          {sending ? 'Sending...' : `Send to ${selected.join(', ')}`}
-        </button>
-      </motion.div>
-    </div>
-  )
-}
-function StatCard({ label, value, icon: Icon, accentClass, bgClass, i }) {
+function StatCard({ label, value, icon: Icon, accent, i }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
-      className="p-5 brut-box bg-card flex flex-col gap-3 justify-center h-full"
+      className="p-5 rounded-2xl border border-border bg-card flex gap-4 items-center"
     >
-      <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center border-2 border-border dark:border-border-strong', bgClass, accentClass)}>
-        <Icon className="w-6 h-6" />
+      <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0', accent)}>
+        <Icon className="w-4.5 h-4.5" />
       </div>
       <div>
-        <p className="text-3xl font-black">{value ?? '—'}</p>
-        <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground mt-1">{label}</p>
+        <p className="text-xl font-bold">{value ?? '—'}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
       </div>
     </motion.div>
   )
 }
+
 export default function AdminDashboard() {
   const { user, isAuth } = useAuth()
   const [tab,        setTab]        = useState('Overview')
@@ -92,15 +38,58 @@ export default function AdminDashboard() {
   const [allEvents,  setAllEvents]  = useState([])
   const [users,      setUsers]      = useState([])
   const [announce,   setAnnounce]   = useState('')
-  const [roleModal,  setRoleModal]  = useState(false)
+  const [loading,    setLoading]    = useState(false)
+
   // ── Gallery state ──────────────────────────────────────────────────────
   const [galleryItems,   setGalleryItems]   = useState([])
   const [galleryLoading, setGalleryLoading] = useState(false)
   const [uploading,      setUploading]      = useState(false)
-  const [loading,        setLoading]        = useState(false)
   const [caption,        setCaption]        = useState('')
   const [category,       setCategory]       = useState('')
   const [file,           setFile]           = useState(null)
+
+  // ── Video state ────────────────────────────────────────────────────────
+  const [videoItems,    setVideoItems]    = useState([])
+  const [videoLoading,  setVideoLoading]  = useState(false)
+  const [videoUploading,setVideoUploading]= useState(false)
+  const [videoCaption,  setVideoCaption]  = useState('')
+  const [videoCategory, setVideoCategory] = useState('')
+  const [videoType,     setVideoType]     = useState('hero')
+  const [videoEventId,  setVideoEventId]  = useState('')
+  const [videoFile,     setVideoFile]     = useState(null)
+  const [eventsList,    setEventsList]    = useState([])
+
+  if (!isAuth || user?.role !== 'admin') return <Navigate to="/login" replace />
+
+  useEffect(() => {
+    Promise.all([adminApi.getStats(), eventsApi.getAll({ status: 'pending', limit: 50 })])
+      .then(([s, e]) => { setStats(s.data.stats); setPending(e.data.events) })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (tab !== 'Events') return
+    eventsApi.getAll({ limit: 50 }).then(({ data }) => setAllEvents(data.events)).catch(() => {})
+  }, [tab])
+
+  useEffect(() => {
+    if (tab !== 'Users') return
+    setLoading(true)
+    adminApi.getUsers({ limit: 50 }).then(({ data }) => setUsers(data.users)).finally(() => setLoading(false))
+  }, [tab])
+
+  useEffect(() => {
+    if (tab !== 'Gallery') return
+    fetchGallery()
+  }, [tab])
+
+  useEffect(() => {
+    if (tab !== 'Videos') return
+    fetchVideos()
+    if (eventsList.length === 0) {
+      eventsApi.getAll({ limit: 100 }).then(({ data }) => setEventsList(data.events)).catch(() => {})
+    }
+  }, [tab])
 
   const fetchGallery = async () => {
     setGalleryLoading(true)
@@ -114,27 +103,17 @@ export default function AdminDashboard() {
     }
   }
 
-  useEffect(() => {
-    Promise.all([adminApi.getStats(), eventsApi.getAll({ status: 'pending', limit: 50 })])
-      .then(([s, e]) => { setStats(s.data.stats); setPending(e.data.events) })
-      .catch(() => {})
-  }, [])
-  useEffect(() => {
-    if (tab !== 'Events') return
-    eventsApi.getAll({ limit: 50 }).then(({ data }) => setAllEvents(data.events)).catch(() => {})
-  }, [tab])
-  useEffect(() => {
-    if (tab !== 'Users') return
-    setLoading(true)
-    adminApi.getUsers({ limit: 50 }).then(({ data }) => setUsers(data.users)).finally(() => setLoading(false))
-  }, [tab])
-
-  useEffect(() => {
-    if (tab !== 'Gallery') return
-    fetchGallery()
-  }, [tab])
-
-  if (!isAuth || user?.role !== 'admin') return <Navigate to="/login" replace />
+  const fetchVideos = async () => {
+    setVideoLoading(true)
+    try {
+      const { data } = await videosApi.getAll()
+      setVideoItems(data.videos)
+    } catch {
+      toast.error('Failed to load videos')
+    } finally {
+      setVideoLoading(false)
+    }
+  }
 
   const handleApprove = async (id) => {
     await eventsApi.approve(id)
@@ -159,9 +138,9 @@ export default function AdminDashboard() {
     setUsers(u => u.map(usr => usr._id === id ? data.user : usr))
     toast.success('User status updated')
   }
-  const sendAnnounce = async (roles) => {
-    if (!announce.trim()) { toast.error('Type a message first'); return }
-    const { data } = await adminApi.sendAnnounce(announce, roles)
+  const sendAnnounce = async () => {
+    if (!announce.trim()) return
+    const { data } = await adminApi.sendAnnounce(announce)
     toast.success(`Announcement sent to ${data.sent} users`)
     setAnnounce('')
   }
@@ -202,70 +181,126 @@ export default function AdminDashboard() {
       toast.error('Failed to delete image')
     }
   }
-  const thCls = 'px-4 py-4 text-left text-[11px] font-black uppercase tracking-widest text-muted-foreground'
-  const tdCls = 'px-4 py-4 text-sm font-semibold'
+
+  // ── Video handlers ─────────────────────────────────────────────────────
+  const handleVideoUpload = async (e) => {
+    e.preventDefault()
+    if (!videoFile)     return toast.error('Please select a video file')
+    if (!videoCaption)  return toast.error('Please enter a caption')
+    if (!videoCategory) return toast.error('Please select a category')
+    if (videoType === 'event-highlight' && !videoEventId) return toast.error('Please select an event')
+
+    const formData = new FormData()
+    formData.append('video', videoFile)
+    formData.append('title', videoCaption)
+    formData.append('category', videoCategory)
+    formData.append('type', videoType)
+    if (videoType === 'event-highlight') formData.append('event', videoEventId)
+
+    setVideoUploading(true)
+    try {
+      const { data } = await videosApi.upload(formData)
+      setVideoItems(prev => [data.video, ...(videoType === 'hero' ? prev.map(v => v.type === 'hero' ? { ...v, isActive: false } : v) : prev)])
+      toast.success('Video uploaded successfully!')
+      setVideoCaption(''); setVideoCategory(''); setVideoEventId(''); setVideoFile(null)
+      e.target.reset()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Video upload failed')
+    } finally {
+      setVideoUploading(false)
+    }
+  }
+
+  const handleActivateVideo = async (id) => {
+    try {
+      const { data } = await videosApi.activate(id)
+      setVideoItems(prev => prev.map(v => {
+        if (v._id === id) return data.video
+        if (v.type === data.video.type && data.video.type === 'hero') return { ...v, isActive: false }
+        return v
+      }))
+      toast.success('Set as active hero video')
+    } catch {
+      toast.error('Failed to activate video')
+    }
+  }
+
+  const handleDeleteVideo = async (id) => {
+    if (!confirm('Delete this video permanently?')) return
+    try {
+      await videosApi.delete(id)
+      setVideoItems(prev => prev.filter(v => v._id !== id))
+      toast.success('Video deleted')
+    } catch {
+      toast.error('Failed to delete video')
+    }
+  }
+
+  const thCls = 'px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-muted-foreground'
+  const tdCls = 'px-4 py-3 text-sm'
+  const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')
+
   return (
-    <>
-    <div className="min-h-screen pt-[72px] bg-background">
+    <div className="min-h-screen pt-[60px] bg-card/30">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 py-8">
+        {/* Header */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4"
+          className="flex items-center justify-between mb-8"
         >
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Shield className="w-4 h-4 text-destructive" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-destructive">Admin Panel</span>
+              <Shield className="w-4 h-4 text-red-500" />
+              <span className="text-xs font-semibold uppercase tracking-widest text-red-500">Admin Panel</span>
             </div>
-            <h1 className="text-3xl font-black tracking-tight">System Dashboard</h1>
+            <h1 className="text-2xl font-bold">System Dashboard</h1>
           </div>
-          <span className="px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl bg-destructive/10 text-destructive border-2 border-destructive/20 shadow-sm">
+          <span className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-xl bg-red-500/10 text-red-500">
             Admin Access
           </span>
         </motion.div>
-        
-        <div className="flex gap-2 mb-8 border-b-2 border-border/10 dark:border-border-strong/10 pb-4 overflow-x-auto">
+
+        {/* Tabs */}
+        <div className="flex gap-1 p-1 bg-muted rounded-xl mb-8 w-fit flex-wrap">
           {TABS.map(t => (
             <button key={t} onClick={() => setTab(t)}
-              className={cn('px-5 py-2.5 rounded-lg text-sm font-black uppercase tracking-widest transition-all whitespace-nowrap',
-                tab === t ? 'bg-foreground text-background shadow-[2px_2px_0px_var(--border)] dark:shadow-[2px_2px_0px_var(--border-strong)] border-2 border-border dark:border-border-strong' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}
+              className={cn('px-5 py-2 rounded-lg text-sm font-medium transition-all',
+                tab === t ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-foreground')}
             >{t}</button>
           ))}
         </div>
-        
+
         {tab === 'Overview' && (
-          <div className="space-y-8">
+          <div className="space-y-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard label="Total Users"          value={stats?.totalUsers}          icon={Users}       accentClass="text-blue-600 dark:text-blue-400" bgClass="bg-blue-100 dark:bg-blue-900/30"    i={0} />
-              <StatCard label="Active Events"         value={stats?.activeEvents}         icon={CheckCircle2} accentClass="text-emerald-600 dark:text-emerald-400" bgClass="bg-emerald-100 dark:bg-emerald-900/30" i={1} />
-              <StatCard label="Pending Approval"      value={stats?.pendingEvents}        icon={Clock}       accentClass="text-amber-600 dark:text-amber-400" bgClass="bg-amber-100 dark:bg-amber-900/30"  i={2} />
-              <StatCard label="Total Registrations"   value={stats?.totalRegistrations}   icon={Users}       accentClass="text-violet-600 dark:text-violet-400" bgClass="bg-violet-100 dark:bg-violet-900/30" i={3} />
+              <StatCard label="Total Users"          value={stats?.totalUsers}          icon={Users}       accent="bg-blue-500/10 text-blue-500"    i={0} />
+              <StatCard label="Active Events"         value={stats?.activeEvents}         icon={CheckCircle2} accent="bg-emerald-500/10 text-emerald-500" i={1} />
+              <StatCard label="Pending Approval"      value={stats?.pendingEvents}        icon={Clock}       accent="bg-amber-500/10 text-amber-500"  i={2} />
+              <StatCard label="Total Registrations"   value={stats?.totalRegistrations}   icon={Users}       accent="bg-violet-500/10 text-violet-500" i={3} />
             </div>
+
             {pending.length > 0 && (
-              <div className="p-8 brut-box bg-card">
-                <h3 className="font-black text-xl mb-6 flex items-center gap-3">
-                  <span className="w-10 h-10 rounded-lg flex items-center justify-center bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-500/20">
-                    <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                  </span>
-                  Pending Approvals ({pending.length})
+              <div className="p-6 rounded-2xl border border-amber-500/20 bg-amber-500/4">
+                <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-amber-500" /> Pending Approvals ({pending.length})
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {pending.map(ev => (
-                    <div key={ev._id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl border-2 border-border dark:border-border-strong bg-background hover:bg-muted transition-colors">
-                      {ev.image && <img src={ev.image} alt={ev.title} className="w-12 h-12 rounded-lg border-2 border-border dark:border-border-strong object-cover flex-shrink-0" />}
+                    <div key={ev._id} className="flex items-center gap-4 p-3 rounded-xl bg-card border border-border">
+                      {ev.image && <img src={ev.image} alt={ev.title} className="w-10 h-10 rounded-xl object-cover flex-shrink-0" />}
                       <div className="flex-1 min-w-0">
-                        <p className="font-black text-base truncate">{ev.title}</p>
-                        <p className="text-xs font-semibold text-muted-foreground mt-1">{ev.organizer_name} · {ev.category}</p>
+                        <p className="font-medium text-sm truncate">{ev.title}</p>
+                        <p className="text-xs text-muted-foreground">{ev.organizer_name} · {ev.category}</p>
                       </div>
-                      <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
+                      <div className="flex gap-2 flex-shrink-0">
                         <button onClick={() => handleApprove(ev._id)}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 px-4 text-xs font-black uppercase tracking-widest rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 border-2 border-emerald-600 shadow-sm transition-colors"
+                          className="flex items-center gap-1.5 h-8 px-3 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:opacity-90 transition-all"
                         >
-                          <CheckCircle2 className="w-4 h-4" /> Approve
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Approve
                         </button>
                         <button onClick={() => handleReject(ev._id)}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 px-4 text-xs font-black uppercase tracking-widest rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 border-2 border-red-700 shadow-sm transition-colors"
+                          className="flex items-center gap-1.5 h-8 px-3 text-xs font-semibold rounded-lg bg-red-600 text-white hover:opacity-90 transition-all"
                         >
-                          <XCircle className="w-4 h-4" /> Reject
+                          <XCircle className="w-3.5 h-3.5" /> Reject
                         </button>
                       </div>
                     </div>
@@ -275,40 +310,33 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
-        
+
         {tab === 'Events' && (
-          <div className="brut-box bg-card overflow-hidden p-0">
-            <div className="overflow-x-auto custom-scrollbar">
+          <div className="rounded-2xl border border-border bg-card overflow-hidden">
+            <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-primary text-primary-foreground border-b-2 border-border dark:border-border-strong">
-                  <tr>{['Event', 'Category', 'Date', 'Seats', 'Status', 'Booths', ''].map(h => <th key={h} className={thCls}>{h}</th>)}</tr>
+                <thead className="bg-muted/50 border-b border-border">
+                  <tr>{['Event', 'Category', 'Date', 'Seats', 'Status', ''].map(h => <th key={h} className={thCls}>{h}</th>)}</tr>
                 </thead>
-                <tbody className="divide-y-2 divide-border dark:divide-border-strong">
+                <tbody className="divide-y divide-border">
                   {allEvents.map(ev => (
-                    <tr key={ev._id} className="hover:bg-muted transition-colors">
-                      <td className={`${tdCls} max-w-[200px]`}><span className="line-clamp-1 font-black text-base">{ev.title}</span></td>
+                    <tr key={ev._id} className="hover:bg-foreground/3 transition-colors">
+                      <td className={`${tdCls} font-medium max-w-[180px]`}><span className="line-clamp-1">{ev.title}</span></td>
                       <td className={tdCls}>
-                        <span className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg bg-secondary text-secondary-foreground border-2 border-border/20">{ev.category}</span>
+                        <span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-primary/10 text-primary">{ev.category}</span>
                       </td>
                       <td className={`${tdCls} text-muted-foreground`}>{ev.date}</td>
                       <td className={`${tdCls} text-muted-foreground`}>{ev.seatsBooked}/{ev.totalSeats}</td>
                       <td className={tdCls}>
-                        <span className={cn('px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg border-2',
-                          ev.status === 'upcoming' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' : 'bg-muted text-muted-foreground border-border/50'
+                        <span className={cn('px-2 py-0.5 text-[11px] font-semibold rounded-full capitalize',
+                          ev.status === 'upcoming' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-muted text-muted-foreground'
                         )}>{ev.status}</span>
                       </td>
                       <td className={tdCls}>
-                        <Link to={`/events/${ev._id}/booths`}
-                          className="inline-flex items-center gap-2 h-9 px-3 text-xs font-black uppercase tracking-widest rounded-lg border-2 border-border dark:border-border-strong hover:bg-foreground/5 transition-all shadow-sm"
-                        >
-                          <LayoutGrid className="w-3.5 h-3.5" /> Manage
-                        </Link>
-                      </td>
-                      <td className={tdCls}>
                         <button onClick={() => handleDeleteEvent(ev._id)}
-                          className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 border-2 border-transparent hover:border-destructive/20 transition-all"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/8 transition-all"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </td>
                     </tr>
@@ -318,34 +346,34 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-        
+
         {tab === 'Users' && (
-          <div className="brut-box bg-card overflow-hidden p-0">
+          <div className="rounded-2xl border border-border bg-card overflow-hidden">
             {loading ? (
-              <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+              <div className="flex justify-center py-14"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
             ) : (
-              <div className="overflow-x-auto custom-scrollbar">
+              <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-primary text-primary-foreground border-b-2 border-border dark:border-border-strong">
+                  <thead className="bg-muted/50 border-b border-border">
                     <tr>{['Name', 'Email', 'Role', 'Department', 'Status', 'Action'].map(h => <th key={h} className={thCls}>{h}</th>)}</tr>
                   </thead>
-                  <tbody className="divide-y-2 divide-border dark:divide-border-strong">
+                  <tbody className="divide-y divide-border">
                     {users.map(usr => (
-                      <tr key={usr._id} className="hover:bg-muted transition-colors">
-                        <td className={`${tdCls} font-black text-base`}>{usr.name}</td>
+                      <tr key={usr._id} className="hover:bg-foreground/3 transition-colors">
+                        <td className={`${tdCls} font-medium`}>{usr.name}</td>
                         <td className={`${tdCls} text-muted-foreground`}>{usr.email}</td>
                         <td className={tdCls}>
-                          <span className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg bg-accent text-accent-foreground border-2 border-border/20">{usr.role}</span>
+                          <span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-primary/10 text-primary capitalize">{usr.role}</span>
                         </td>
                         <td className={`${tdCls} text-muted-foreground`}>{usr.department || '—'}</td>
                         <td className={tdCls}>
-                          <span className={cn('px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg border-2',
-                            usr.isActive ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-500/20'
+                          <span className={cn('px-2 py-0.5 text-[11px] font-semibold rounded-full',
+                            usr.isActive ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'
                           )}>{usr.isActive ? 'active' : 'suspended'}</span>
                         </td>
                         <td className={tdCls}>
                           <button onClick={() => toggleUser(usr._id)} disabled={usr.role === 'admin'}
-                            className="h-9 px-4 text-[10px] font-black uppercase tracking-widest rounded-lg border-2 border-border dark:border-border-strong hover:bg-foreground hover:text-background transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                            className="h-7 px-3 text-xs font-semibold rounded-lg border border-border hover:bg-foreground/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             {usr.isActive ? 'Suspend' : 'Activate'}
                           </button>
@@ -360,78 +388,187 @@ export default function AdminDashboard() {
         )}
 
         {tab === 'Gallery' && (
-          <div className="space-y-8">
-            {/* Upload form */}
-            <div className="p-8 brut-box bg-card">
-              <h2 className="font-black text-xl mb-6 flex items-center gap-3">
-                <span className="w-10 h-10 rounded-lg flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-500/20">
-                  <ImagePlus className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                </span>
-                Upload New Image
+          <div className="space-y-6">
+            <div className="p-6 rounded-2xl border border-border bg-card">
+              <h2 className="font-bold text-[17px] mb-4 flex items-center gap-2">
+                <ImagePlus className="w-4.5 h-4.5" /> Upload New Image
               </h2>
-              <form onSubmit={handleUpload} className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-                <div className="flex-1 w-full space-y-2">
-                  <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Caption</label>
+              <form onSubmit={handleUpload} className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+                <div className="flex-1 w-full space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Caption</label>
                   <input
                     type="text" value={caption} onChange={e => setCaption(e.target.value)}
                     placeholder="e.g. Robotics Workshop Demo"
-                    className="w-full h-12 px-4 rounded-xl border-2 border-border dark:border-border-strong bg-background text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                    className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
                 </div>
-                <div className="w-full sm:w-48 space-y-2">
-                  <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Category</label>
+                <div className="w-full sm:w-48 space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Category</label>
                   <select
                     value={category} onChange={e => setCategory(e.target.value)}
-                    className="w-full h-12 px-4 rounded-xl border-2 border-border dark:border-border-strong bg-background text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                    className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   >
                     <option value="">Select category</option>
                     {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
-                <div className="w-full sm:w-64 space-y-2">
-                  <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Image File</label>
+                <div className="w-full sm:w-56 space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Image File</label>
                   <input
                     type="file" accept="image/*" onChange={e => setFile(e.target.files[0])}
-                    className="w-full h-12 text-xs file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-2 file:border-primary file:text-xs file:font-black file:uppercase file:tracking-widest file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:transition-colors bg-background border-2 border-border dark:border-border-strong rounded-xl cursor-pointer shadow-sm"
+                    className="w-full text-xs file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                   />
                 </div>
                 <button type="submit" disabled={uploading}
-                  className="btn-brut btn-brut-primary h-12"
+                  className="flex items-center gap-2 h-10 px-5 text-sm font-semibold rounded-xl bg-foreground text-background hover:opacity-90 transition-all disabled:opacity-50 whitespace-nowrap"
                 >
-                  {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-                  {uploading ? 'Uploading' : 'Upload'}
+                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  {uploading ? 'Uploading...' : 'Upload'}
                 </button>
               </form>
             </div>
 
-            {/* Gallery grid */}
-            <div className="brut-box bg-card p-8">
-              <h2 className="font-black text-xl mb-6">All Images ({galleryItems.length})</h2>
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <h2 className="font-bold text-[17px] mb-4">All Images ({galleryItems.length})</h2>
               {galleryLoading ? (
-                <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+                <div className="flex justify-center py-14"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
               ) : galleryItems.length === 0 ? (
-                <div className="text-center py-20 border-2 border-dashed border-border dark:border-border-strong rounded-xl bg-muted/50">
-                  <p className="text-sm font-semibold text-muted-foreground">No images uploaded yet.</p>
-                </div>
+                <p className="text-sm text-muted-foreground text-center py-10">No images uploaded yet.</p>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                   {galleryItems.map(item => (
-                    <div key={item._id} className="relative group rounded-xl overflow-hidden border-2 border-border dark:border-border-strong shadow-[4px_4px_0px_var(--border)] dark:shadow-[4px_4px_0px_var(--border-strong)] bg-background">
+                    <div key={item._id} className="relative group rounded-xl overflow-hidden border border-border">
                       <img
-                        src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${item.file_url}`}
+                        src={`${API_ROOT}${item.file_url}`}
                         alt={item.caption}
-                        className="w-full h-40 object-cover"
+                        className="w-full h-32 object-cover"
                       />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-colors" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors" />
                       <button
                         onClick={() => handleDeleteImage(item._id)}
-                        className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-destructive text-destructive-foreground border-2 border-red-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                        className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform bg-gradient-to-t from-black/80 to-transparent pt-8">
-                        <p className="text-white text-xs font-black truncate">{item.caption}</p>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-white/70">{item.category}</span>
+                      <div className="absolute bottom-0 inset-x-0 p-2 translate-y-full group-hover:translate-y-0 transition-transform">
+                        <p className="text-white text-[11px] font-semibold truncate">{item.caption}</p>
+                        <span className="text-[9px] uppercase tracking-wider text-white/70">{item.category}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {tab === 'Videos' && (
+          <div className="space-y-6">
+            {/* Upload form */}
+            <div className="p-6 rounded-2xl border border-border bg-card">
+              <h2 className="font-bold text-[17px] mb-4 flex items-center gap-2">
+                <VideoIcon className="w-4.5 h-4.5" /> Upload New Video
+              </h2>
+              <form onSubmit={handleVideoUpload} className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex-1 space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Caption</label>
+                    <input
+                      type="text" value={videoCaption} onChange={e => setVideoCaption(e.target.value)}
+                      placeholder="e.g. TechFest 2025 Highlights"
+                      className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    />
+                  </div>
+                  <div className="w-full sm:w-48 space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Category</label>
+                    <select
+                      value={videoCategory} onChange={e => setVideoCategory(e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    >
+                      <option value="">Select category</option>
+                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div className="w-full sm:w-56 space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Video Type</label>
+                    <select
+                      value={videoType} onChange={e => setVideoType(e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    >
+                      <option value="hero">Home Page Background</option>
+                      <option value="event-highlight">Event Highlight</option>
+                    </select>
+                  </div>
+                </div>
+
+                {videoType === 'event-highlight' && (
+                  <div className="w-full space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Link to Event</label>
+                    <select
+                      value={videoEventId} onChange={e => setVideoEventId(e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    >
+                      <option value="">Select event</option>
+                      {eventsList.map(ev => <option key={ev._id} value={ev._id}>{ev.title}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+                  <div className="flex-1 w-full space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Video File (mp4, webm)</label>
+                    <input
+                      type="file" accept="video/mp4,video/webm,video/ogg" onChange={e => setVideoFile(e.target.files[0])}
+                      className="w-full text-xs file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                    />
+                  </div>
+                  <button type="submit" disabled={videoUploading}
+                    className="flex items-center gap-2 h-10 px-5 text-sm font-semibold rounded-xl bg-foreground text-background hover:opacity-90 transition-all disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {videoUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    {videoUploading ? 'Uploading...' : 'Upload Video'}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Video list */}
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <h2 className="font-bold text-[17px] mb-4">All Videos ({videoItems.length})</h2>
+              {videoLoading ? (
+                <div className="flex justify-center py-14"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+              ) : videoItems.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-10">No videos uploaded yet.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {videoItems.map(item => (
+                    <div key={item._id} className="rounded-xl overflow-hidden border border-border bg-background">
+                      <video src={`${API_ROOT}${item.video_url}`} className="w-full h-36 object-cover bg-black" controls muted />
+                      <div className="p-3">
+                        <p className="text-sm font-semibold truncate">{item.title}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{item.category || '—'}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+                            {item.type === 'hero' ? 'Home BG' : 'Event Highlight'}
+                          </span>
+                          {item.isActive && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-semibold">Active</span>
+                          )}
+                        </div>
+                        <div className="flex gap-2 mt-3">
+                          {item.type === 'hero' && !item.isActive && (
+                            <button onClick={() => handleActivateVideo(item._id)}
+                              className="flex-1 flex items-center justify-center gap-1.5 h-8 text-xs font-semibold rounded-lg border border-border hover:bg-foreground/5 transition-all"
+                            >
+                              <PlayCircle className="w-3.5 h-3.5" /> Set Active
+                            </button>
+                          )}
+                          <button onClick={() => handleDeleteVideo(item._id)}
+                            className="flex-1 flex items-center justify-center gap-1.5 h-8 text-xs font-semibold rounded-lg text-red-500 border border-red-500/20 hover:bg-red-500/8 transition-all"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -442,31 +579,26 @@ export default function AdminDashboard() {
         )}
 
         {tab === 'Announcements' && (
-          <div className="max-w-2xl">
-            <div className="p-8 brut-box bg-card space-y-6">
-              <h2 className="font-black text-xl flex items-center gap-3">
-                <span className="w-10 h-10 rounded-lg flex items-center justify-center bg-violet-100 dark:bg-violet-900/30 border-2 border-violet-500/20">
-                  <Bell className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-                </span>
-                Send Announcement
-              </h2>
-              <div className="space-y-2">
-                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Message</label>
-                <textarea rows={6} value={announce} onChange={e => setAnnounce(e.target.value)}
+          <div className="max-w-xl">
+            <div className="p-6 rounded-2xl border border-border bg-card space-y-4">
+              <h2 className="font-bold text-[17px]">Send Announcement</h2>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Message</label>
+                <textarea rows={5} value={announce} onChange={e => setAnnounce(e.target.value)}
                   placeholder="Type your announcement here..."
-                  className="w-full px-4 py-3 rounded-xl border-2 border-border dark:border-border-strong bg-background text-sm font-semibold resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                  className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 />
               </div>
-              <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                <button onClick={() => sendAnnounce(['participant', 'organizer', 'admin'])}
-                  className="btn-brut btn-brut-primary flex-1 justify-center"
+              <div className="flex gap-3">
+                <button onClick={sendAnnounce}
+                  className="flex items-center gap-2 h-10 px-5 text-sm font-semibold rounded-xl bg-foreground text-background hover:opacity-90 transition-all"
                 >
-                  <Bell className="w-4 h-4 mr-2" /> Send to All Users
+                  <Bell className="w-4 h-4" /> Send to All Users
                 </button>
-                <button onClick={() => { if (!announce.trim()) { toast.error('Type a message first'); return } setRoleModal(true) }}
-                  className="btn-brut flex-[0.7] justify-center bg-muted text-foreground border-border dark:border-border-strong"
+                <button onClick={() => toast.info('Targeted messaging coming soon!')}
+                  className="flex items-center gap-2 h-10 px-5 text-sm font-medium rounded-xl border border-border hover:bg-foreground/5 transition-all"
                 >
-                  <Settings className="w-4 h-4 mr-2" /> Target Roles
+                  <Settings className="w-4 h-4" /> Target Roles
                 </button>
               </div>
             </div>
@@ -474,15 +606,5 @@ export default function AdminDashboard() {
         )}
       </div>
     </div>
-
-    <AnimatePresence>
-      {roleModal && (
-        <TargetRolesModal
-          onClose={() => setRoleModal(false)}
-          onSend={sendAnnounce}
-        />
-      )}
-    </AnimatePresence>
-    </>
   )
 }

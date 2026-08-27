@@ -10,6 +10,20 @@ import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 import { eventsApi, registrationsApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { videosApi } from '@/lib/api'
+
+
+  const [highlightVideos, setHighlightVideos] = useState([])
+
+  useEffect(() => {
+    if (!event?._id) return
+    videosApi.getAll({ type: 'event-highlight', event: event._id })
+      .then(({ data }) => setHighlightVideos(data.videos || []))
+      .catch(() => {})
+  }, [event?._id])
+
+  const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')
+
 
 export default function EventDetail() {
   const { id } = useParams()
@@ -155,6 +169,25 @@ export default function EventDetail() {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key="details">
                   <h2 className="font-black text-2xl mb-4 tracking-tight">About This Event</h2>
                   <p className="text-foreground/80 font-medium leading-relaxed mb-8 text-lg">{event.description}</p>
+                                    {highlightVideos.length > 0 && (
+                    <div className="mt-10">
+                      <h2 className="font-black text-2xl mb-4 tracking-tight">Event Highlights</h2>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        {highlightVideos.map(v => (
+                          <div key={v._id} className="rounded-2xl overflow-hidden border-2 border-border dark:border-border-strong bg-black">
+                            <video
+                              src={`${API_ROOT}${v.video_url}`}
+                              className="w-full h-56 object-cover"
+                              controls
+                              loop
+                              muted
+                            />
+                            <p className="p-3 text-sm font-semibold bg-card">{v.title}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {event.registrationDeadline && (
                     <div className="p-5 rounded-xl border-2 border-amber-400 bg-amber-100 dark:bg-amber-900/30 dark:border-amber-600 shadow-[2px_2px_0px_theme(colors.amber.400)] dark:shadow-[2px_2px_0px_theme(colors.amber.600)]">
                       <div className="flex items-center gap-2 text-amber-900 dark:text-amber-400 font-black text-sm uppercase tracking-widest mb-2">
