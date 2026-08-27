@@ -15,9 +15,9 @@ import { CATEGORIES, DEPARTMENTS } from '@/data/mockData'
 import { cn } from '@/lib/utils'
 import BoothManager from '@/components/booths/BoothManager'
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* ==========================================================================
    CONSTANTS
-══════════════════════════════════════════════════════════════════════════ */
+========================================================================== */
 const TABS = [
   { id: 'overview',      label: 'Overview',      icon: BarChart3  },
   { id: 'ai',            label: 'AI Copilot',    icon: Sparkles   },
@@ -36,9 +36,9 @@ const EMPTY_FORM = {
   registrationDeadline: '', waitlistEnabled: false, featured: false, tags: '',
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* ==========================================================================
    SVG CHART PRIMITIVES
-══════════════════════════════════════════════════════════════════════════ */
+========================================================================== */
 function Sparkline({ data = [], width = 80, height = 28 }) {
   if (!data.length) return null
   const max = Math.max(...data)
@@ -129,9 +129,9 @@ function DonutChart({ segments = [], size = 100 }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* ==========================================================================
    BADGE & STATUS HELPERS
-══════════════════════════════════════════════════════════════════════════ */
+========================================================================== */
 const STATUS_COLORS = {
   upcoming:  'micro-badge-accent',
   pending:   'micro-badge',
@@ -148,26 +148,31 @@ function StatusBadge({ status }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* ==========================================================================
    EVENT FORM MODAL
-══════════════════════════════════════════════════════════════════════════ */
+========================================================================== */
 const Field = ({ label, name, type = 'text', placeholder = '', form, set }) => (
   <div className="space-y-1">
-    <label className="meta-text">{label}</label>
+    <label htmlFor={`adm-${name}`} className="meta-text">{label}</label>
     <input
+      id={`adm-${name}`}
+      name={name}
       type={type}
       value={form[name]}
       onChange={e => set(name, e.target.value)}
       placeholder={placeholder}
       className="w-full px-3 py-2 text-sm bg-transparent"
+      autoComplete={type === 'date' || type === 'time' ? 'off' : undefined}
     />
   </div>
 )
 
 const SelectField = ({ label, name, options, form, set }) => (
   <div className="space-y-1">
-    <label className="meta-text">{label}</label>
+    <label htmlFor={`adm-${name}`} className="meta-text">{label}</label>
     <select
+      id={`adm-${name}`}
+      name={name}
       value={form[name]}
       onChange={e => set(name, e.target.value)}
       className="w-full px-3 py-2 text-sm bg-card"
@@ -326,9 +331,9 @@ function EventFormModal({ initial, onClose, onSaved }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* ==========================================================================
    ROLES MODAL
-══════════════════════════════════════════════════════════════════════════ */
+========================================================================== */
 function RolesModal({ onClose, onSend }) {
   const [selected, setSelected] = useState([...ALL_ROLES])
   const toggle = (r) =>
@@ -382,9 +387,9 @@ function RolesModal({ onClose, onSend }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* ==========================================================================
    AI COPILOT PANEL
-══════════════════════════════════════════════════════════════════════════ */
+========================================================================== */
 function AICopilot({ events }) {
   const [subTab,       setSubTab]       = useState('chat')
   const [messages,     setMessages]     = useState([
@@ -400,7 +405,7 @@ function AICopilot({ events }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, thinking])
 
-  /* ── Real Gemini chat ──────────────────────────────────────────────── */
+  /* -- Real Gemini chat ------------------------------------------------ */
   const sendMessage = async (text) => {
     const q = text || input
     if (!q.trim()) return
@@ -422,7 +427,7 @@ function AICopilot({ events }) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
   }
 
-  /* ── Rule-based feedback analyzer ─────────────────────────────────── */
+  /* -- Rule-based feedback analyzer ----------------------------------- */
   const POSITIVE = ['great','amazing','loved','excellent','wonderful','fantastic','good','enjoyed','awesome','helpful','best','outstanding','perfect','brilliant']
   const NEGATIVE  = ['bad','poor','terrible','horrible','boring','disappointed','worst','awful','slow','confusing','broken','issues','problem','wrong']
 
@@ -450,7 +455,7 @@ function AICopilot({ events }) {
     })
   }
 
-  /* ── Memos for recommender ─────────────────────────────────────────── */
+  /* -- Memos for recommender ------------------------------------------- */
   const topEvent = useMemo(() => {
     if (!events.length) return null
     return [...events].sort((a, b) => (b.seatsBooked || 0) - (a.seatsBooked || 0))[0]
@@ -494,7 +499,7 @@ function AICopilot({ events }) {
         ))}
       </div>
 
-      {/* ── AI Chat ── */}
+      {/* -- AI Chat -- */}
       {subTab === 'chat' && (
         <div className="editorial-frame flex flex-col" style={{ height: '520px' }}>
           <div className="flex items-center gap-2 p-3 hairline-b">
@@ -575,7 +580,7 @@ function AICopilot({ events }) {
         </div>
       )}
 
-      {/* ── Feedback Analyzer ── */}
+      {/* -- Feedback Analyzer -- */}
       {subTab === 'feedback' && (
         <div className="space-y-4">
           <div className="editorial-frame p-5 space-y-4">
@@ -661,7 +666,7 @@ function AICopilot({ events }) {
         </div>
       )}
 
-      {/* ── Event Recommender ── */}
+      {/* -- Event Recommender -- */}
       {subTab === 'recommend' && (
         <div className="space-y-4">
           {topEvent && (
@@ -738,12 +743,12 @@ function AICopilot({ events }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* ==========================================================================
    MAIN ADMIN DASHBOARD
-══════════════════════════════════════════════════════════════════════════ */
-/* CUSTOM EVENT SELECT (shared — avoids OS native dropdown styling) */
+========================================================================== */
+/* CUSTOM EVENT SELECT (shared -- avoids OS native dropdown styling) */
 
-function AdminEventSelect({ events, value, onChange, placeholder = '— Select an event —' }) {
+function AdminEventSelect({ events, value, onChange, placeholder = '-- Select an event --' }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   const selected = events.find(e => e._id === value)
@@ -797,17 +802,17 @@ export default function AdminDashboard() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
-  /* ── core state ───────────────────────────────────────────────────── */
+  /* -- core state ----------------------------------------------------- */
   const [activeTab,   setActiveTab]   = useState('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  /* ── data state ───────────────────────────────────────────────────── */
+  /* -- data state ----------------------------------------------------- */
   const [stats,   setStats]   = useState(null)
   const [events,  setEvents]  = useState([])
   const [users,   setUsers]   = useState([])
   const [gallery, setGallery] = useState([])
 
-  /* ── loading / misc ───────────────────────────────────────────────── */
+  /* -- loading / misc ------------------------------------------------- */
   const [loading,          setLoading]          = useState(true)
   const [refreshing,       setRefreshing]        = useState(false)
   const [eventModal,       setEventModal]        = useState(null)   // null | 'create' | event-obj
@@ -820,7 +825,7 @@ export default function AdminDashboard() {
   const [selectedEventId,  setSelectedEventId]   = useState('')
   const [sendingAnnounce,  setSendingAnnounce]   = useState(false)
 
-  /* ── fetch data ───────────────────────────────────────────────────── */
+  /* -- fetch data ----------------------------------------------------- */
   const fetchAll = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     else setRefreshing(true)
@@ -848,7 +853,7 @@ export default function AdminDashboard() {
     run()
   }, [fetchAll])
 
-  /* ── event handlers ───────────────────────────────────────────────── */
+  /* -- event handlers ------------------------------------------------- */
   const handleApprove = async (id) => {
     try {
       await eventsApi.approve(id)
@@ -940,7 +945,7 @@ export default function AdminDashboard() {
     navigate('/login')
   }
 
-  /* ── computed overview data ──────────────────────────────────────── */
+  /* -- computed overview data ---------------------------------------- */
   const pendingEvents = useMemo(() => events.filter(e => e.status === 'pending'), [events])
 
   const kpiCards = useMemo(() => [
@@ -993,7 +998,7 @@ export default function AdminDashboard() {
       .slice(0, 5)
   }, [events])
 
-  /* ── loading screen ───────────────────────────────────────────────── */
+  /* -- loading screen ------------------------------------------------- */
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -1005,13 +1010,13 @@ export default function AdminDashboard() {
     )
   }
 
-  /* ════════════════════════════════════════════════════════════════════
+  /* ====================================================================
      RENDER
-  ════════════════════════════════════════════════════════════════════ */
+  ==================================================================== */
   return (
     <div className="min-h-screen bg-background flex">
 
-      {/* ── Mobile overlay ───────────────────────────────────────────── */}
+      {/* -- Mobile overlay --------------------------------------------- */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
@@ -1022,7 +1027,7 @@ export default function AdminDashboard() {
         )}
       </AnimatePresence>
 
-      {/* ── Sidebar ──────────────────────────────────────────────────── */}
+      {/* -- Sidebar ---------------------------------------------------- */}
       <aside className={cn(
         'fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-card hairline-r flex flex-col shrink-0 overflow-y-auto',
         'transition-transform duration-300 lg:translate-x-0',
@@ -1082,7 +1087,7 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* ── Main content ─────────────────────────────────────────────── */}
+      {/* -- Main content ----------------------------------------------- */}
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Top bar */}
@@ -1124,9 +1129,9 @@ export default function AdminDashboard() {
         <main className="flex-1 overflow-y-auto p-6">
           <AnimatePresence mode="wait">
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ===================================================
                 OVERVIEW
-            ═══════════════════════════════════════════════════ */}
+            =================================================== */}
             {activeTab === 'overview' && (
               <motion.div
                 key="overview"
@@ -1167,7 +1172,7 @@ export default function AdminDashboard() {
                       </div>
                       <div>
                         <p className="text-3xl font-black tracking-tight">
-                          {card.value ?? <span className="opacity-30">—</span>}
+                          {card.value ?? <span className="opacity-30">--</span>}
                         </p>
                         <p className="meta-text mt-0.5">{card.label}</p>
                         {card.sub && <p className="text-xs text-muted-foreground mt-1">{card.sub}</p>}
@@ -1242,7 +1247,7 @@ export default function AdminDashboard() {
                   <div className="editorial-frame p-5">
                     <div className="flex items-center gap-2 mb-4">
                       <Target className="w-4 h-4" />
-                      <p className="meta-text">Seat Fill Rates — Top Events</p>
+                      <p className="meta-text">Seat Fill Rates -- Top Events</p>
                     </div>
                     <div className="space-y-3">
                       {seatFillRates.map(ev => {
@@ -1251,7 +1256,7 @@ export default function AdminDashboard() {
                           <div key={ev._id} className="space-y-1">
                             <div className="flex justify-between text-sm">
                               <span className="font-medium truncate max-w-[60%]">{ev.title}</span>
-                              <span className="meta-text">{pct}% — {ev.seatsBooked}/{ev.totalSeats}</span>
+                              <span className="meta-text">{pct}% -- {ev.seatsBooked}/{ev.totalSeats}</span>
                             </div>
                             <div className="h-1.5 bg-secondary w-full overflow-hidden">
                               <motion.div
@@ -1331,18 +1336,18 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ===================================================
                 AI COPILOT
-            ═══════════════════════════════════════════════════ */}
+            =================================================== */}
             {activeTab === 'ai' && (
               <motion.div key="ai" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <AICopilot events={events} />
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ===================================================
                 EVENTS
-            ═══════════════════════════════════════════════════ */}
+            =================================================== */}
             {activeTab === 'events' && (
               <motion.div
                 key="events"
@@ -1362,7 +1367,7 @@ export default function AdminDashboard() {
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-sm truncate">{ev.title}</p>
                             <p className="meta-text mt-0.5">
-                              {ev.category} · {ev.date ? new Date(ev.date).toLocaleDateString() : '—'}
+                              {ev.category} · {ev.date ? new Date(ev.date).toLocaleDateString() : '--'}
                             </p>
                           </div>
                           <div className="flex gap-2 shrink-0">
@@ -1410,7 +1415,7 @@ export default function AdminDashboard() {
                             </td>
                             <td className="px-4 py-3 text-muted-foreground">{ev.category}</td>
                             <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                              {ev.date ? new Date(ev.date).toLocaleDateString() : '—'}
+                              {ev.date ? new Date(ev.date).toLocaleDateString() : '--'}
                             </td>
                             <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                               {ev.seatsBooked ?? 0}/{ev.totalSeats ?? '?'}
@@ -1450,9 +1455,9 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ===================================================
                 FLOOR PLANS
-            ═══════════════════════════════════════════════════ */}
+            =================================================== */}
             {activeTab === 'floorplan' && (
               <motion.div
                 key="floorplan"
@@ -1483,7 +1488,7 @@ export default function AdminDashboard() {
                           cursor:           'pointer',
                         }}
                       >
-                        <option value="">— Select an event —</option>
+                        <option value="">-- Select an event --</option>
                         {events.map(ev => (
                           <option key={ev._id} value={ev._id}>{ev.title}</option>
                         ))}
@@ -1506,9 +1511,9 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ===================================================
                 USERS
-            ═══════════════════════════════════════════════════ */}
+            =================================================== */}
             {activeTab === 'users' && (
               <motion.div key="users" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <div className="editorial-frame">
@@ -1593,9 +1598,9 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ===================================================
                 GALLERY
-            ═══════════════════════════════════════════════════ */}
+            =================================================== */}
             {activeTab === 'gallery' && (
               <motion.div
                 key="gallery"
@@ -1687,9 +1692,9 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ===================================================
                 ANNOUNCEMENTS
-            ═══════════════════════════════════════════════════ */}
+            =================================================== */}
             {activeTab === 'announcements' && (
               <motion.div
                 key="announcements"
@@ -1765,7 +1770,7 @@ export default function AdminDashboard() {
         </main>
       </div>
 
-      {/* ── Modals ───────────────────────────────────────────────────── */}
+      {/* -- Modals ----------------------------------------------------- */}
       {eventModal && (
         <EventFormModal
           initial={eventModal === 'create' ? null : eventModal}

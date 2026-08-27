@@ -2,6 +2,8 @@
 node_modules/
 
 # Environment
+.env
+server/.env
 !.env.example
 # Build
 client/dist/

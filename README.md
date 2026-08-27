@@ -7,6 +7,8 @@
 
 > **CollegeEventSphere** is an end-to-end, role-based campus event management and stall allocation platform built on the modern **MERN** stack (React 19, Node.js, Express 5, MongoDB). It unifies event discovery, ticketing with scannable QR codes, automated waitlists, interactive stall/booth floor plans, media galleries, and administrative governance under one unified portal.
 
+> **Production documentation:** [22-page system documentation](docs/CollegeEventSphere-Documentation.html) with architecture, ERD, DFD, flowcharts, API map, RBAC, deployment and readiness notes.
+
 ---
 
 ## 📑 Table of Contents

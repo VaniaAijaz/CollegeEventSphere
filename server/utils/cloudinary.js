@@ -2,6 +2,23 @@ import { v2 as cloudinary } from 'cloudinary'
 import { CloudinaryStorage } from 'multer-storage-cloudinary'
 import multer from 'multer'
 
+const requiredCloudinaryVariables = [
+  'CLOUDINARY_CLOUD_NAME',
+  'CLOUDINARY_API_KEY',
+  'CLOUDINARY_API_SECRET',
+]
+
+const missingCloudinaryVariables = requiredCloudinaryVariables.filter((name) => {
+  const value = process.env[name]
+  return !value || value.startsWith('your_')
+})
+
+if (missingCloudinaryVariables.length > 0) {
+  throw new Error(
+    `Cloudinary is not configured. Set ${missingCloudinaryVariables.join(', ')} in server/.env.`
+  )
+}
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key:    process.env.CLOUDINARY_API_KEY,

@@ -15,9 +15,9 @@ import { CATEGORIES, DEPARTMENTS } from '@/data/mockData'
 import { cn } from '@/lib/utils'
 import BoothManager from '@/components/booths/BoothManager'
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* ==========================================================================
    CONSTANTS
-══════════════════════════════════════════════════════════════════════════ */
+========================================================================== */
 const TABS = [
   { id: 'overview',      label: 'Overview',      icon: BarChart3  },
   { id: 'events',        label: 'My Events',      icon: Calendar   },
@@ -35,9 +35,9 @@ const EMPTY_FORM = {
   registrationDeadline: '', waitlistEnabled: false, featured: false, tags: '',
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* ==========================================================================
    SVG SPARKLINE
-══════════════════════════════════════════════════════════════════════════ */
+========================================================================== */
 function Sparkline({ data = [], width = 80, height = 28 }) {
   if (!data.length) return null
   const max = Math.max(...data)
@@ -62,9 +62,9 @@ function Sparkline({ data = [], width = 80, height = 28 }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* ==========================================================================
    STATUS BADGE
-══════════════════════════════════════════════════════════════════════════ */
+========================================================================== */
 const STATUS_COLORS = {
   upcoming:  'micro-badge-accent',
   pending:   'micro-badge',
@@ -80,12 +80,12 @@ function StatusBadge({ status }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* ==========================================================================
    SOUND FEEDBACK
-══════════════════════════════════════════════════════════════════════════ */
-/* CUSTOM EVENT SELECT (no native dropdown — avoids OS styling issues) */
+========================================================================== */
+/* CUSTOM EVENT SELECT (no native dropdown -- avoids OS styling issues) */
 
-function EventSelect({ events, value, onChange, placeholder = '— Select an event —' }) {
+function EventSelect({ events, value, onChange, placeholder = '-- Select an event --' }) {
   const [open, setOpen] = useState(false)
   const ref  = useRef(null)
   const selected = events.find(e => e._id === value)
@@ -175,10 +175,10 @@ function playScanSound(ok) {
   } catch { /* ignore */ }
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* ==========================================================================
    EVENT FORM MODAL  (create / edit)
-══════════════════════════════════════════════════════════════════════════ */
-/* Standalone field components — defined OUTSIDE modal to prevent re-mount on keystroke */
+========================================================================== */
+/* Standalone field components -- defined OUTSIDE modal to prevent re-mount on keystroke */
 function FormField({ label, name, type = 'text', placeholder = '', form, set, prefix = 'evt' }) {
   return (
     <div className="space-y-1">
@@ -387,9 +387,9 @@ function EventFormModal({ initial, onClose, onSaved }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* ==========================================================================
    ROLES MODAL
-══════════════════════════════════════════════════════════════════════════ */
+========================================================================== */
 function RolesModal({ onClose, onSend }) {
   const [selected, setSelected] = useState([...ALL_ROLES])
   const toggle = (r) => setSelected(p => p.includes(r) ? p.filter(x => x !== r) : [...p, r])
@@ -429,22 +429,22 @@ function RolesModal({ onClose, onSend }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* ==========================================================================
    MAIN ORGANIZER DASHBOARD
-══════════════════════════════════════════════════════════════════════════ */
+========================================================================== */
 export default function OrganizerDashboard() {
   const { user, isAuth, logout } = useAuth()
   const navigate = useNavigate()
 
-  /* ── core ── */
+  /* -- core -- */
   const [activeTab,   setActiveTab]   = useState('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  /* ── data ── */
+  /* -- data -- */
   const [events,        setEvents]        = useState([])
   const [registrations, setRegistrations] = useState({})   // { [eventId]: [] }
 
-  /* ── ui ── */
+  /* -- ui -- */
   const [loading,          setLoading]          = useState(true)
   const [refreshing,       setRefreshing]        = useState(false)
   const [eventModal,       setEventModal]        = useState(null)   // null | 'create' | event-obj
@@ -453,18 +453,18 @@ export default function OrganizerDashboard() {
   const [regEventId,       setRegEventId]        = useState('')
   const [regLoading,       setRegLoading]        = useState(false)
 
-  /* ── attendance ── */
+  /* -- attendance -- */
   const [attendEventId, setAttendEventId] = useState('')
   const [qrInput,     setQrInput]     = useState('')
   const [verifying,   setVerifying]   = useState(false)
   const [scanMsg,     setScanMsg]     = useState(null)
   const [scanHistory, setScanHistory] = useState([])
 
-  /* ── announcements ── */
+  /* -- announcements -- */
   const [announceTxt,     setAnnounceTxt]     = useState('')
   const [sendingAnnounce, setSendingAnnounce] = useState(false)
 
-  /* ── fetch ── */
+  /* -- fetch -- */
   const fetchEvents = useCallback(async (silent = false) => {
     if (!silent) setLoading(true); else setRefreshing(true)
     try {
@@ -476,7 +476,7 @@ export default function OrganizerDashboard() {
 
   useEffect(() => { fetchEvents() }, [fetchEvents])
 
-  /* ── fetch registrations for a specific event ── */
+  /* -- fetch registrations for a specific event -- */
   const fetchRegistrations = useCallback(async (eventId) => {
     if (!eventId || registrations[eventId]) return
     setRegLoading(true)
@@ -491,7 +491,7 @@ export default function OrganizerDashboard() {
     if (activeTab === 'registrations' && regEventId) fetchRegistrations(regEventId)
   }, [activeTab, regEventId])
 
-  /* ── event handlers ── */
+  /* -- event handlers -- */
   const handleEventSaved = (event, isEdit) => {
     if (isEdit) setEvents(ev => ev.map(e => e._id === event._id ? event : e))
     else        setEvents(ev => [event, ...ev])
@@ -547,13 +547,13 @@ export default function OrganizerDashboard() {
 
   const handleLogout = async () => { await logout(); navigate('/login') }
 
-  /* ── computed ── */
+  /* -- computed -- */
   const pendingEvents  = useMemo(() => events.filter(e => e.status === 'pending'),  [events])
   const upcomingEvents = useMemo(() => events.filter(e => e.status === 'upcoming'), [events])
   const totalReg       = useMemo(() => events.reduce((s, e) => s + (e.seatsBooked || 0), 0), [events])
   const avgRating      = useMemo(() => {
     const rated = events.filter(e => e.rating > 0)
-    return rated.length ? (rated.reduce((s, e) => s + e.rating, 0) / rated.length).toFixed(1) : '—'
+    return rated.length ? (rated.reduce((s, e) => s + e.rating, 0) / rated.length).toFixed(1) : '--'
   }, [events])
 
   const kpiCards = useMemo(() => [
@@ -569,10 +569,10 @@ export default function OrganizerDashboard() {
       .slice(0, 5)
   }, [events])
 
-  /* ── auth guard ── */
+  /* -- auth guard -- */
   if (!isAuth || user?.role !== 'organizer') return <Navigate to="/login" replace />
 
-  /* ── loading screen ── */
+  /* -- loading screen -- */
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -584,9 +584,9 @@ export default function OrganizerDashboard() {
     )
   }
 
-  /* ════════════════════════════════════════════════════════════════════
+  /* ====================================================================
      RENDER
-  ════════════════════════════════════════════════════════════════════ */
+  ==================================================================== */
   return (
     <div className="min-h-screen bg-background flex">
 
@@ -599,7 +599,7 @@ export default function OrganizerDashboard() {
         )}
       </AnimatePresence>
 
-      {/* ── Sidebar ── */}
+      {/* -- Sidebar -- */}
       <aside className={cn(
         'fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-card hairline-r flex flex-col shrink-0 overflow-y-auto',
         'transition-transform duration-300 lg:translate-x-0',
@@ -653,7 +653,7 @@ export default function OrganizerDashboard() {
         </div>
       </aside>
 
-      {/* ── Main content ── */}
+      {/* -- Main content -- */}
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Top bar */}
@@ -684,9 +684,9 @@ export default function OrganizerDashboard() {
         <main className="flex-1 overflow-y-auto p-6">
           <AnimatePresence mode="wait">
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ===================================================
                 OVERVIEW
-            ═══════════════════════════════════════════════════ */}
+            =================================================== */}
             {activeTab === 'overview' && (
               <motion.div key="overview" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
 
@@ -714,7 +714,7 @@ export default function OrganizerDashboard() {
                       </div>
                       <div>
                         <p className="text-3xl font-black tracking-tight">
-                          {card.value ?? <span className="opacity-30">—</span>}
+                          {card.value ?? <span className="opacity-30">--</span>}
                         </p>
                         <p className="meta-text mt-0.5">{card.label}</p>
                         {card.sub && <p className="text-xs text-muted-foreground mt-1">{card.sub}</p>}
@@ -766,7 +766,7 @@ export default function OrganizerDashboard() {
                               <div className="min-w-0">
                                 <p className="font-semibold text-sm truncate">{ev.title}</p>
                                 <p className="meta-text mt-0.5 text-muted-foreground">
-                                  {ev.date ? new Date(ev.date).toLocaleDateString() : '—'} · {ev.venue}
+                                  {ev.date ? new Date(ev.date).toLocaleDateString() : '--'} · {ev.venue}
                                 </p>
                               </div>
                             </div>
@@ -803,7 +803,7 @@ export default function OrganizerDashboard() {
                           <div key={ev._id} className="space-y-1">
                             <div className="flex justify-between text-sm">
                               <span className="font-medium truncate max-w-[60%]">{ev.title}</span>
-                              <span className="meta-text">{pct}% — {ev.seatsBooked || 0}/{ev.totalSeats}</span>
+                              <span className="meta-text">{pct}% -- {ev.seatsBooked || 0}/{ev.totalSeats}</span>
                             </div>
                             <div className="h-1.5 bg-secondary w-full overflow-hidden">
                               <motion.div className="h-full bg-foreground"
@@ -830,9 +830,9 @@ export default function OrganizerDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ===================================================
                 MY EVENTS
-            ═══════════════════════════════════════════════════ */}
+            =================================================== */}
             {activeTab === 'events' && (
               <motion.div key="events" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
 
@@ -849,7 +849,7 @@ export default function OrganizerDashboard() {
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-sm truncate">{ev.title}</p>
                             <p className="meta-text mt-0.5 text-muted-foreground">
-                              {ev.category} · {ev.date ? new Date(ev.date).toLocaleDateString() : '—'}
+                              {ev.category} · {ev.date ? new Date(ev.date).toLocaleDateString() : '--'}
                             </p>
                           </div>
                           <span className="micro-badge">Under Review</span>
@@ -888,7 +888,7 @@ export default function OrganizerDashboard() {
                             </td>
                             <td className="px-4 py-3 text-muted-foreground">{ev.category}</td>
                             <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                              {ev.date ? new Date(ev.date).toLocaleDateString() : '—'}
+                              {ev.date ? new Date(ev.date).toLocaleDateString() : '--'}
                             </td>
                             <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                               {ev.seatsBooked ?? 0}/{ev.totalSeats ?? '?'}
@@ -927,9 +927,9 @@ export default function OrganizerDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ===================================================
                 FLOOR PLANS / BOOTHS
-            ═══════════════════════════════════════════════════ */}
+            =================================================== */}
             {activeTab === 'booths' && (
               <motion.div key="booths" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
                 <div className="editorial-frame p-5 space-y-4">
@@ -938,7 +938,7 @@ export default function OrganizerDashboard() {
                     <div className="relative" style={{ maxWidth: '360px' }}>
                       <select value={selectedEventId} onChange={e => setSelectedEventId(e.target.value)}
                         style={{ WebkitAppearance:'none', MozAppearance:'none', appearance:'none', background:'var(--card)', color:'var(--foreground)', border:'1px solid var(--border)', borderRadius:'0', width:'100%', height:'40px', padding:'0 2.5rem 0 0.75rem', fontSize:'0.875rem', fontFamily:'Inter, sans-serif', outline:'none', cursor:'pointer' }}>
-                        <option value="">— Select an event —</option>
+                        <option value="">-- Select an event --</option>
                         {events.map(ev => <option key={ev._id} value={ev._id}>{ev.title}</option>)}
                       </select>
                       <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none rotate-90" />
@@ -957,9 +957,9 @@ export default function OrganizerDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ===================================================
                 ATTENDANCE
-            ═══════════════════════════════════════════════════ */}
+            =================================================== */}
             {activeTab === 'attendance' && (
               <motion.div key="attendance" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <div className="grid lg:grid-cols-12 gap-6">
@@ -980,7 +980,7 @@ export default function OrganizerDashboard() {
 
                       {/* Step 1: Select event */}
                       <div className="space-y-1">
-                        <label className="meta-text">Step 1 — Select Event</label>
+                        <label className="meta-text">Step 1 -- Select Event</label>
                         <div className="relative">
                           <select
                             value={attendEventId}
@@ -994,7 +994,7 @@ export default function OrganizerDashboard() {
                             }}
                             style={{ WebkitAppearance:'none', MozAppearance:'none', appearance:'none', background:'var(--card)', color:'var(--foreground)', border:'1px solid var(--border)', borderRadius:'0', width:'100%', height:'40px', padding:'0 2.5rem 0 0.75rem', fontSize:'0.875rem', fontFamily:'Inter, sans-serif', outline:'none', cursor:'pointer' }}
                           >
-                            <option value="">— Select an event —</option>
+                            <option value="">-- Select an event --</option>
                             {(() => {
                               const today = new Date().toISOString().split('T')[0]
                               return events.map(ev => {
@@ -1007,7 +1007,7 @@ export default function OrganizerDashboard() {
                                     disabled={!isToday}
                                     style={{ color: isToday ? 'var(--foreground)' : 'var(--muted-foreground)', fontStyle: isToday ? 'normal' : 'italic' }}
                                   >
-                                    {isToday ? '✓ ' : '🔒 '}{ev.title} — {evDate || '—'}
+                                    {isToday ? '✓ ' : '🔒 '}{ev.title} -- {evDate || '--'}
                                   </option>
                                 )
                               })
@@ -1018,13 +1018,13 @@ export default function OrganizerDashboard() {
                         {/* Legend */}
                         <p className="text-xs text-muted-foreground">
                           <span className="font-semibold text-foreground">✓ Today&apos;s events</span> are selectable.
-                          {' '}<span className="italic">🔒 Other events</span> are disabled — attendance only on event day.
+                          {' '}<span className="italic">🔒 Other events</span> are disabled -- attendance only on event day.
                         </p>
                         {attendEventId && (() => {
                           const ev = events.find(e => e._id === attendEventId)
                           return (
                             <p className="text-xs text-accent font-semibold">
-                              ✓ {ev?.title} is today — attendance marking is enabled
+                              ✓ {ev?.title} is today -- attendance marking is enabled
                             </p>
                           )
                         })()}
@@ -1032,7 +1032,7 @@ export default function OrganizerDashboard() {
 
                       {/* Step 2: Enter code */}
                       <div className="space-y-2">
-                        <label className="meta-text">Step 2 — Enter 4-Char Code or Scan QR</label>
+                        <label className="meta-text">Step 2 -- Enter 4-Char Code or Scan QR</label>
                         <div className="flex gap-2">
                           <input
                             value={qrInput}
@@ -1107,9 +1107,9 @@ export default function OrganizerDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ===================================================
                 REGISTRATIONS
-            ═══════════════════════════════════════════════════ */}
+            =================================================== */}
             {activeTab === 'registrations' && (
               <motion.div key="registrations" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
                 <div className="editorial-frame p-5">
@@ -1118,7 +1118,7 @@ export default function OrganizerDashboard() {
                     <select value={regEventId}
                       onChange={e => { setRegEventId(e.target.value); if (e.target.value) fetchRegistrations(e.target.value) }}
                       style={{ WebkitAppearance:'none', MozAppearance:'none', appearance:'none', background:'var(--card)', color:'var(--foreground)', border:'1px solid var(--border)', borderRadius:'0', width:'100%', height:'40px', padding:'0 2.5rem 0 0.75rem', fontSize:'0.875rem', fontFamily:'Inter, sans-serif', outline:'none', cursor:'pointer' }}>
-                      <option value="">— Select an event —</option>
+                      <option value="">-- Select an event --</option>
                       {events.map(ev => <option key={ev._id} value={ev._id}>{ev.title}</option>)}
                     </select>
                     <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none rotate-90" />
@@ -1130,7 +1130,7 @@ export default function OrganizerDashboard() {
                     <div className="flex items-center gap-2 p-4 hairline-b">
                       <Users className="w-4 h-4" />
                       <span className="meta-text">
-                        Registrations — {events.find(e => e._id === regEventId)?.title}
+                        Registrations -- {events.find(e => e._id === regEventId)?.title}
                         {registrations[regEventId] && ` (${registrations[regEventId].length})`}
                       </span>
                     </div>
@@ -1157,12 +1157,12 @@ export default function OrganizerDashboard() {
                                     <div className="w-7 h-7 bg-foreground text-background rounded-full flex items-center justify-center text-xs font-black shrink-0">
                                       {(reg.user?.name || reg.name || '?')[0].toUpperCase()}
                                     </div>
-                                    <span className="font-medium">{reg.user?.name || reg.name || '—'}</span>
+                                    <span className="font-medium">{reg.user?.name || reg.name || '--'}</span>
                                   </div>
                                 </td>
-                                <td className="px-4 py-3 text-muted-foreground">{reg.user?.email || reg.email || '—'}</td>
+                                <td className="px-4 py-3 text-muted-foreground">{reg.user?.email || reg.email || '--'}</td>
                                 <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                                  {reg.createdAt ? new Date(reg.createdAt).toLocaleDateString() : '—'}
+                                  {reg.createdAt ? new Date(reg.createdAt).toLocaleDateString() : '--'}
                                 </td>
                                 <td className="px-4 py-3">
                                   <span className={cn('micro-badge',
@@ -1196,9 +1196,9 @@ export default function OrganizerDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ===================================================
                 ANNOUNCEMENTS
-            ═══════════════════════════════════════════════════ */}
+            =================================================== */}
             {activeTab === 'announcements' && (
               <motion.div key="announcements" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="max-w-2xl space-y-4">
                 <div className="editorial-frame p-5 space-y-4">
@@ -1252,7 +1252,7 @@ export default function OrganizerDashboard() {
         </main>
       </div>
 
-      {/* ── Modals ── */}
+      {/* -- Modals -- */}
       {eventModal && (
         <EventFormModal
           initial={eventModal === 'create' ? null : eventModal}
