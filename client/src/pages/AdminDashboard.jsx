@@ -639,14 +639,18 @@ function AICopilot({ stats, pending, allEvents, users }) {
             </div>
             <div className="space-y-3">
               {[
-                stats?.pendingEvents > 0 && { text: 'Review and approve pending events to keep the platform active.', action: 'Go to Events' },
-                stats?.activeEvents === 0 && { text: 'Create your first event to get started.', action: 'Create Event' },
-                stats?.totalUsers > 0 && stats?.totalRegistrations === 0 && { text: 'Send an announcement to engage your user base.', action: 'Announcements' },
+                stats?.pendingEvents > 0 && { text: 'Review and approve pending events to keep the platform active.', action: 'Go to Events', onClick: () => setTab('overview') },
+                stats?.activeEvents === 0 && { text: 'Create your first event to get started.', action: 'Create Event', onClick: () => setEventModal('create') },
+                stats?.totalUsers > 0 && stats?.totalRegistrations === 0 && { text: 'Send an announcement to engage your user base.', action: 'Announcements', onClick: () => setTab('announcements') },
                 stats?.totalRegistrations > 0 && { text: 'Platform is active. Keep events updated and engaging.', action: null },
               ].filter(Boolean).slice(0, 3).map((rec, i) => rec && (
                 <div key={i} className="flex items-center gap-3 p-4 editorial-frame bg-secondary/10">
                   <span className="text-sm font-semibold flex-1">{rec.text}</span>
-                  {rec.action && <span className="meta-text text-foreground">{rec.action} →</span>}
+                  {rec.action && (
+                    <button onClick={rec.onClick} className="meta-text text-foreground hover:underline transition-all">
+                      {rec.action} →
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

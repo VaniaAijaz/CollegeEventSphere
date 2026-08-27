@@ -1,10 +1,12 @@
-import { motion } from 'framer-motion'
-import { ArrowRight, Mail, MapPin, MessageSquare, Phone, Send } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ArrowRight, Mail, MapPin, MessageSquare, Phone, Send, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import api from '@/lib/api'
+import { cn } from '@/lib/utils'
 
 export default function Contact() {
+  const [activeFaq, setActiveFaq] = useState(null)
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
   const [loading, setLoading] = useState(false)
   const [newsletterEmail, setNewsletterEmail] = useState('')
@@ -98,14 +100,42 @@ export default function Contact() {
 
             <div className="editorial-frame p-10">
               <p className="meta-text text-muted-foreground mb-8">Quick Help</p>
-              {['How to register for events?', "Can't access my certificate?", 'How to reset password?'].map((q, i) => (
-                <button key={q}
-                  className="block w-full text-left text-base font-bold text-foreground/80 hover:text-foreground py-5 hairline-b last:border-0 transition-colors hover:pl-2 duration-300"
-                >
-                  <span className="meta-text text-muted-foreground mr-4">0{i+1}.</span>
-                  {q}
-                </button>
-              ))}
+              {[
+                { q: 'How to register for events?', a: 'Simply browse our Events page, select an event you are interested in, and click the "Book Ticket" button. Make sure you are logged in!' },
+                { q: "Can't access my certificate?", a: 'Certificates are generated automatically after an event is marked as completed by the organizer. You can view them in your Profile dashboard.' },
+                { q: 'How to reset password?', a: 'Currently, you can contact your administrator or use the support form to request a password reset.' }
+              ].map((faq, i) => {
+                const isActive = activeFaq === i;
+                return (
+                  <div key={faq.q} className="hairline-b last:border-0 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setActiveFaq(isActive ? null : i)}
+                      className="block w-full text-left text-base font-bold text-foreground/80 hover:text-foreground py-5 transition-colors hover:pl-2 duration-300 flex items-center justify-between"
+                    >
+                      <span>
+                        <span className="meta-text text-muted-foreground mr-4">0{i+1}.</span>
+                        {faq.q}
+                      </span>
+                      <ChevronRight className={cn("w-4 h-4 transition-transform duration-300", isActive && "rotate-90")} />
+                    </button>
+                    <AnimatePresence>
+                      {isActive && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <p className="pb-5 pl-10 pr-4 text-sm font-medium text-muted-foreground leading-relaxed">
+                            {faq.a}
+                          </p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
             </div>
           </motion.div>
 

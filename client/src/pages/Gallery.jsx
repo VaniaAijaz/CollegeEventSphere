@@ -3,13 +3,15 @@ import { X, ZoomIn } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { galleryApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 const API_BASE = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace('/api', '')
   : 'http://localhost:5000'
+const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')
 
 export default function Gallery() {
-  const [filter,   setFilter]   = useState('all')
+  const [activeCategory, setActiveCategory] = useState('all')
   const [lightbox, setLightbox] = useState(null)
   const [gallery,  setGallery]  = useState([])
   const [loading,  setLoading]  = useState(true)
@@ -18,55 +20,50 @@ export default function Gallery() {
     const fetchGallery = async () => {
       setLoading(true)
       try {
-        const params = filter === 'all' ? {} : { category: filter }
+        const params = activeCategory === 'all' ? {} : { category: activeCategory }
         const { data } = await galleryApi.getAll(params)
         setGallery(data.items || [])
       } catch (err) {
         console.error('Gallery fetch error:', err)
+        toast.error('Failed to load gallery')
       } finally {
         setLoading(false)
       }
     }
     fetchGallery()
-  }, [filter])
+  }, [activeCategory])
 
   // fallback categories if gallery is filtered or empty
-  const filterTabs = ['all', 'Technical', 'Cultural', 'Sports', 'Workshop', 'Seminar', 'Annual Day', 'Intercollegiate']
-  // It's better to just use dynamicCategories if we have them, but since filtering replaces the list, we need fixed tabs or a separate fetch. Let's just use the fixed list for the tabs to avoid disappearing tabs when clicked.
+  const cats = ['all', 'Technical', 'Cultural', 'Sports', 'Workshop']
 
   return (
     <div className="min-h-screen pt-[72px] bg-background">
-      {/* Header */}
-      <div className="bg-foreground text-background py-16 mb-10 hairline-b relative overflow-hidden">
-        <div className="relative max-w-[90rem] mx-auto px-5 sm:px-12 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <p className="meta-text text-accent mb-4 tracking-[0.3em]">Campus Media</p>
+      <div className="max-w-[90rem] mx-auto px-5 sm:px-12 py-12">
+        
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="max-w-2xl">
             <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tighter mb-4">Event Photo Gallery</h1>
-            <p className="text-background/80 font-medium text-base sm:text-lg max-w-xl mx-auto">
-              Relive key highlights, student celebrations, and exhibition moments across campus.
+            <p className="meta-text text-muted-foreground leading-relaxed">
+              Explore moments captured across various events, workshops, and competitions.
             </p>
           </motion.div>
-        </div>
-      </div>
-
-      <div className="max-w-[90rem] mx-auto px-5 sm:px-12 pb-24">
-        {/* Filter pills */}
-        <div className="flex gap-2 flex-wrap mb-12 pb-6 hairline-b">
-          {filterTabs.map((c, i) => (
-            <motion.button
-              key={c}
-              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
-              onClick={() => setFilter(c)}
-              className={cn(
-                'btn-editorial btn-editorial-outline px-5 py-2 text-xs',
-                filter === c
-                  ? 'bg-foreground text-background'
-                  : 'bg-background text-muted-foreground hover:bg-muted'
-              )}
-            >
-              {c === 'all' ? 'All Photos' : c}
-            </motion.button>
-          ))}
+          <div className="flex flex-wrap gap-2">
+            {cats.map((c) => (
+              <button
+                key={c}
+                onClick={() => setActiveCategory(c)}
+                className={cn(
+                  "px-6 py-2 meta-text editorial-frame transition-all",
+                  activeCategory === c 
+                    ? "bg-foreground text-background" 
+                    : "bg-card text-muted-foreground hover:bg-secondary/20 hover:text-foreground"
+                )}
+              >
+                {c === 'all' ? 'All Events' : c}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Loading state */}
@@ -96,7 +93,7 @@ export default function Gallery() {
                   onClick={() => setLightbox(item)}
                 >
                   <img
-                    src={`${API_BASE}${item.file_url}`}
+                    src={`${API_ROOT}${item.file_url}`}
                     alt={item.caption}
                     className="w-full object-cover transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"
@@ -147,7 +144,7 @@ export default function Gallery() {
             >
               <div className="bg-secondary/20 flex items-center justify-center p-4 h-[70vh]">
                 <img
-                  src={`${API_BASE}${lightbox.file_url}`}
+                  src={`${API_ROOT}${lightbox.file_url}`}
                   alt={lightbox.caption}
                   className="max-h-full w-auto object-contain"
                 />
