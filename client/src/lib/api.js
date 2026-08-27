@@ -59,9 +59,10 @@ export const registrationsApi = {
 }
 
 export const notificationsApi = {
-  getAll:      ()   => api.get('/notifications'),
-  markAllRead: ()   => api.patch('/notifications/read-all'),
-  markRead:    (id) => api.patch(`/notifications/${id}/read`),
+  getAll:       ()             => api.get('/notifications'),
+  markAllRead:  ()             => api.patch('/notifications/read-all'),
+  markRead:     (id)           => api.patch(`/notifications/${id}/read`),
+  sendAnnounce: (text, roles)  => api.post('/notifications/announce', { text, roles }),
 }
 
 export const galleryApi = {
@@ -75,5 +76,14 @@ export const adminApi = {
   getUsers:       (params)            => api.get('/admin/users', { params }),
   toggleUser:     (id)                => api.patch(`/admin/users/${id}/toggle`),
   changeRole:     (id, role)          => api.patch(`/admin/users/${id}/role`, { role }),
-  sendAnnounce:   (text, roles)       => api.post('/admin/announce', { text, roles }),
+}
+
+export const socialApi = {
+  getProfile:       (id)       => api.get(`/social/profile/${id}`),
+  follow:           (id)       => api.post(`/social/follow/${id}`),
+  unfollow:         (id)       => api.post(`/social/unfollow/${id}`),
+  getConversations: ()         => api.get('/social/messages/conversations'),
+  getMessages:      (userId)   => api.get(`/social/messages/${userId}`),
+  sendMessage:      (userId, text) => api.post(`/social/messages/${userId}`, { text }),
+  deleteChat:       (userId)   => api.delete(`/social/messages/${userId}`),
 }

@@ -1,8 +1,8 @@
 # Dependencies
 node_modules/
 
-
-
+# Environment
+!.env.example
 # Build
 client/dist/
 client/dist-ssr/

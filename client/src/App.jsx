@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useEffect, Component } from 'react'
 import { Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import Footer from '@/components/layout/Footer'
@@ -23,20 +23,54 @@ const OrganizerDashboard = lazy(() => import('@/pages/OrganizerDashboard'))
 const About              = lazy(() => import('@/pages/About'))
 const Contact            = lazy(() => import('@/pages/Contact'))
 const Sitemap            = lazy(() => import('@/pages/Sitemap'))
+const Profile            = lazy(() => import('@/pages/Profile'))
+const Messages           = lazy(() => import('@/pages/Messages'))
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center gap-5 pt-20 text-center px-5">
+          <div className="text-7xl font-black text-destructive/20">Oops</div>
+          <h1 className="text-2xl font-bold">Something went wrong</h1>
+          <p className="text-muted-foreground text-sm max-w-sm">We're sorry, but the application crashed. Refresh the page to try again.</p>
+          <button onClick={() => window.location.reload()} className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-foreground text-background hover:opacity-90 transition-all">
+            Reload Page
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function PageLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <motion.div
         animate={{ opacity: [0.4, 1, 0.4] }}
         transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-        className="flex items-center gap-3"
+        className="flex items-center gap-4"
       >
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
-          <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+        <div className="w-10 h-10 bg-foreground text-background flex items-center justify-center">
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
             <path d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
         </div>
-        <span className="font-semibold text-sm text-muted-foreground tracking-tight">EventSphere</span>
+        <span className="font-extrabold text-xl tracking-tighter">EventSphere</span>
       </motion.div>
     </div>
   )
@@ -45,6 +79,14 @@ const pageVariants = {
   initial: { opacity: 0, y: 10 },
   enter:   { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
   exit:    { opacity: 0, y: -8, transition: { duration: 0.2, ease: 'easeIn' } },
+}
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+  return null
 }
 function AnimatedRoutes() {
   const location = useLocation()
@@ -71,6 +113,8 @@ function AnimatedRoutes() {
             <Route path="/dashboard/:tab"      element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/admin"               element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/organizer"           element={<ProtectedRoute role="organizer"><OrganizerDashboard /></ProtectedRoute>} />
+            <Route path="/profile/:id"         element={<Profile />} />
+            <Route path="/messages"            element={<ProtectedRoute><Messages /></ProtectedRoute>} />
             <Route path="/about"               element={<About />} />
             <Route path="/contact"             element={<Contact />} />
             <Route path="/sitemap"             element={<Sitemap />} />
@@ -96,10 +140,13 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <Router>
+          <ScrollToTop />
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <main className="flex-1 flex flex-col">
-              <AnimatedRoutes />
+              <ErrorBoundary>
+                <AnimatedRoutes />
+              </ErrorBoundary>
             </main>
             <Footer />
             <ChatbotWidget />

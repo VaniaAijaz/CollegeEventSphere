@@ -9,8 +9,8 @@ import { DEPARTMENTS } from '@/data/mockData'
 
 function Field({ id, label, error, children }) {
   return (
-    <div className="space-y-2">
-      <label htmlFor={id} className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+    <div className="space-y-3">
+      <label htmlFor={id} className="meta-text text-muted-foreground">
         {label}
       </label>
       {children}
@@ -58,77 +58,77 @@ export default function Register() {
   return (
     <div className="min-h-screen pt-[72px] flex bg-background">
       {/* Left panel */}
-      <div className="hidden lg:flex lg:w-2/5 xl:w-1/3 relative overflow-hidden bg-primary text-primary-foreground border-r-2 border-border dark:border-border-strong">
-        <div className="absolute inset-0 dot-grid opacity-[0.2]" />
+      <div className="hidden lg:flex lg:w-2/5 xl:w-1/3 relative overflow-hidden bg-foreground text-background hairline-r">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-20 mix-blend-luminosity" />
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-          <Link to="/" className="flex items-center gap-3 w-fit">
-            <div className="w-10 h-10 rounded-lg bg-card border-2 border-border dark:border-border-strong flex items-center justify-center brut-box-sm shadow-[2px_2px_0px_var(--border)] dark:shadow-[2px_2px_0px_var(--border-strong)]">
-              <Zap className="w-5 h-5 text-primary" />
+          <Link to="/" className="flex items-center gap-4 w-fit">
+            <div className="w-12 h-12 bg-background text-foreground flex items-center justify-center">
+              <Zap className="w-5 h-5" />
             </div>
-            <span className="font-black text-2xl tracking-tight">EventSphere</span>
+            <span className="font-extrabold text-3xl tracking-tighter">EventSphere</span>
           </Link>
           <div>
-            <h2 className="text-5xl font-black leading-tight mb-6 tracking-tight">
-              Join 8,500+<br />students on<br /><span className="text-accent">campus.</span>
+            <h2 className="text-6xl font-extrabold leading-[1.1] mb-8 tracking-tighter">
+              Join 8,500+<br />students on<br /><span className="text-background/50">campus.</span>
             </h2>
-            <p className="text-primary-foreground/80 font-semibold text-lg max-w-sm leading-relaxed">
-              Register, attend events, and earn certificates — all in one place.
+            <p className="text-background/80 font-medium text-xl max-w-sm leading-relaxed">
+              Register, attend events, and earn credentials — all in one place.
             </p>
           </div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-primary-foreground/50">© {new Date().getFullYear()} EventSphere</p>
+          <p className="meta-text text-background/50">© {new Date().getFullYear()} EventSphere</p>
         </div>
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-10 overflow-y-auto">
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 overflow-y-auto bg-background">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full max-w-[500px] py-10 brut-box bg-card p-8 sm:p-10"
+          className="w-full max-w-[540px] py-12"
         >
-          <div className="mb-8 text-center">
-            <Link to="/" className="flex items-center justify-center gap-2 lg:hidden mb-8 w-fit mx-auto">
-              <div className="w-8 h-8 rounded-lg bg-primary border-2 border-border dark:border-border-strong flex items-center justify-center">
-                <Zap className="w-4 h-4 text-primary-foreground" />
+          <div className="mb-12">
+            <Link to="/" className="flex items-center gap-3 lg:hidden mb-12 w-fit">
+              <div className="w-10 h-10 bg-foreground text-background flex items-center justify-center">
+                <Zap className="w-4 h-4" />
               </div>
-              <span className="font-black text-xl tracking-tight text-foreground">EventSphere</span>
+              <span className="font-extrabold text-2xl tracking-tighter text-foreground">EventSphere</span>
             </Link>
-            <h1 className="text-3xl font-black mb-2 tracking-tight">Create account</h1>
-            <p className="text-sm font-semibold text-muted-foreground">Join EventSphere and never miss an event</p>
+            <h1 className="text-4xl font-extrabold mb-3 tracking-tighter">Create account</h1>
+            <p className="text-base font-medium text-muted-foreground">Join EventSphere and never miss an event.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {errors.general && (
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="text-xs font-bold text-destructive bg-destructive/10 border-2 border-destructive/20 px-4 py-3 rounded-xl uppercase tracking-widest"
+                className="text-xs font-bold text-destructive bg-destructive/10 p-4 border border-destructive/20 uppercase tracking-widest"
               >{errors.general}</motion.p>
             )}
 
-            <div className="grid sm:grid-cols-2 gap-5">
+            <div className="grid sm:grid-cols-2 gap-6">
               <Field id="name" label="Full Name *" error={errors.name}>
                 <input id="name" placeholder="Arjun Mehta" value={form.name}
-                  onChange={e => set('name', e.target.value)} className="w-full h-12 px-4" />
+                  onChange={e => set('name', e.target.value)} className="editorial-input w-full" />
               </Field>
               <Field id="phone" label="Phone *" error={errors.phone}>
                 <input id="phone" placeholder="9876543210" value={form.phone}
-                  onChange={e => set('phone', e.target.value)} className="w-full h-12 px-4" />
+                  onChange={e => set('phone', e.target.value)} className="editorial-input w-full" />
               </Field>
             </div>
 
             <Field id="email" label="College Email *" error={errors.email}>
               <input id="email" type="email" placeholder="you@college.edu" value={form.email}
-                onChange={e => set('email', e.target.value)} autoComplete="email" className="w-full h-12 px-4" />
+                onChange={e => set('email', e.target.value)} autoComplete="email" className="editorial-input w-full" />
             </Field>
 
-            <div className="grid sm:grid-cols-2 gap-5">
-              <div className="space-y-2">
-                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Department *</label>
+            <div className="grid sm:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <label className="meta-text text-muted-foreground">Department *</label>
                 <Select value={form.department} onValueChange={v => set('department', v)}>
-                  <SelectTrigger className="w-full h-12 font-semibold">
+                  <SelectTrigger className="editorial-input w-full text-left">
                     <SelectValue placeholder="Select dept" />
                   </SelectTrigger>
-                  <SelectContent className="brut-box">
+                  <SelectContent className="editorial-frame">
                     {DEPARTMENTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -136,16 +136,16 @@ export default function Register() {
               </div>
               <Field id="enrollNo" label="Enrollment No. *" error={errors.enrollNo}>
                 <input id="enrollNo" placeholder="CS2021001" value={form.enrollNo}
-                  onChange={e => set('enrollNo', e.target.value)} className="w-full h-12 px-4" />
+                  onChange={e => set('enrollNo', e.target.value)} className="editorial-input w-full" />
               </Field>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-5">
+            <div className="grid sm:grid-cols-2 gap-6">
               <Field id="password" label="Password *" error={errors.password}>
                 <div className="relative">
                   <input id="password" type={showPw ? 'text' : 'password'} placeholder="Min 6 chars"
                     value={form.password} onChange={e => set('password', e.target.value)}
-                    className="w-full h-12 px-4 pr-12" />
+                    className="editorial-input w-full pr-12" />
                   <button type="button" onClick={() => setShowPw(v => !v)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
@@ -155,20 +155,20 @@ export default function Register() {
               </Field>
               <Field id="confirm" label="Confirm *" error={errors.confirm}>
                 <input id="confirm" type="password" placeholder="Repeat password"
-                  value={form.confirm} onChange={e => set('confirm', e.target.value)} className="w-full h-12 px-4" />
+                  value={form.confirm} onChange={e => set('confirm', e.target.value)} className="editorial-input w-full" />
               </Field>
             </div>
 
-            <button type="submit" disabled={loading} className="btn-brut btn-brut-primary w-full h-12 mt-4">
+            <button type="submit" disabled={loading} className="btn-editorial btn-editorial-primary w-full h-14 mt-6">
               {loading
                 ? <span className="w-5 h-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
                 : 'Create Account'}
             </button>
           </form>
 
-          <p className="text-center text-sm font-semibold text-muted-foreground mt-8">
+          <p className="text-base font-medium text-muted-foreground mt-10">
             Already have an account?{' '}
-            <Link to="/login" className="text-primary font-black hover:underline">Sign in</Link>
+            <Link to="/login" className="text-foreground font-bold hover:underline underline-offset-4">Sign in</Link>
           </p>
         </motion.div>
       </div>

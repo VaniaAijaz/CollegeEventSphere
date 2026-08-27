@@ -40,7 +40,7 @@ Reply in the same language/style the student used — English question gets an E
 // POST /api/chatbot/ask   body: { message: string }
 export const askChatbot = async (req, res) => {
   try {
-    const { message } = req.body
+    const { message, userProfile } = req.body
     if (!message || !message.trim()) {
       return res.status(400).json({ message: 'Message required' })
     }
@@ -49,8 +49,13 @@ export const askChatbot = async (req, res) => {
 
     const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' })
 
+    const userCtx = userProfile 
+      ? `--- USER CONTEXT ---\nThe student asking this is named ${userProfile.name}, in the ${userProfile.department || 'Unknown'} department. Their interests are: ${userProfile.interests?.join(', ') || 'None specified'}. Use this to give personalized event recommendations.\n----------------------\n`
+      : ''
+
     const prompt = `${SYSTEM_INSTRUCTION}
 
+${userCtx}
 --- CURRENT EVENT DATA ---
 ${context}
 --- END EVENT DATA ---
