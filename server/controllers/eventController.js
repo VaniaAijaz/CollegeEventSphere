@@ -2,6 +2,7 @@ import { body } from 'express-validator'
 import Event from '../models/Event.js'
 import Registration from '../models/Registration.js'
 import { cloudinary } from '../utils/cloudinary.js'
+import { sendMail, eventStatusMail } from '../utils/email.js'
 
 // ── Validators ────────────────────────────────────────────────────────────
 
@@ -11,7 +12,15 @@ export const eventValidators = [
   body('category')
     .isIn(['Technical', 'Cultural', 'Sports', 'Workshop', 'Seminar', 'Annual Day', 'Intercollegiate'])
     .withMessage('Invalid category'),
-  body('date').notEmpty().withMessage('Date required'),
+  body('date').notEmpty().withMessage('Date required')
+    .custom((val) => {
+      // Date format is YYYY-MM-DD
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const inputDate = new Date(val)
+      if (inputDate < today) throw new Error('Cannot schedule events in the past')
+      return true
+    }),
   body('time').notEmpty().withMessage('Start time required'),
   body('endTime').notEmpty().withMessage('End time required'),
   body('venue').trim().notEmpty().withMessage('Venue required'),
@@ -26,7 +35,23 @@ const buildFilter = (query) => {
   if (query.category) filter.category = query.category
   if (query.dept)     filter.department = query.dept
   if (query.featured) filter.featured = true
-  if (query.search)   filter.$text = { $search: query.search }
+  // Filter out past events unless explicitly asked (e.g., from Dashboard)
+  if (!query.showPast) {
+    const today = new Date()
+    // format as YYYY-MM-DD
+    const yyyy = today.getFullYear()
+    const mm = String(today.getMonth() + 1).padStart(2, '0')
+    const dd = String(today.getDate()).padStart(2, '0')
+    filter.date = { $gte: `${yyyy}-${mm}-${dd}` }
+  }
+  if (query.search) {
+    filter.$or = [
+      { title: { $regex: query.search, $options: 'i' } },
+      { description: { $regex: query.search, $options: 'i' } },
+      { organizer_name: { $regex: query.search, $options: 'i' } },
+      { tags: { $regex: query.search, $options: 'i' } }
+    ]
+  }
   return filter
 }
 
@@ -145,8 +170,12 @@ export const approveEvent = async (req, res) => {
       req.params.id,
       { status: 'upcoming' },
       { new: true }
-    )
+    ).populate('organizer', 'name email')
     if (!event) return res.status(404).json({ message: 'Event not found' })
+    
+    // Notify organizer
+    sendMail({ to: event.organizer.email, ...eventStatusMail(event.organizer.name, event.title, 'upcoming') })
+    
     res.json({ success: true, event })
   } catch (err) {
     res.status(500).json({ message: err.message })
@@ -160,8 +189,12 @@ export const rejectEvent = async (req, res) => {
       req.params.id,
       { status: 'cancelled' },
       { new: true }
-    )
+    ).populate('organizer', 'name email')
     if (!event) return res.status(404).json({ message: 'Event not found' })
+    
+    // Notify organizer
+    sendMail({ to: event.organizer.email, ...eventStatusMail(event.organizer.name, event.title, 'cancelled') })
+    
     res.json({ success: true, event })
   } catch (err) {
     res.status(500).json({ message: err.message })

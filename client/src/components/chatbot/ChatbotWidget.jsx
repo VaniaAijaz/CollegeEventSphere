@@ -25,8 +25,7 @@ export default function ChatbotWidget() {
     }
   }, [messages, open])
 
-  // Only show for logged-in attendees (hide for organizer/admin)
-  if (!isAuth || role === 'organizer' || role === 'admin') return null
+  // Chatbot is now visible for everyone for easy testing/usage
 
   const sendMessage = async () => {
     const text = input.trim()
@@ -40,7 +39,7 @@ export default function ChatbotWidget() {
       const res = await fetch(`${API_BASE}/api/chatbot/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, userProfile: user }),
       })
       const data = await res.json()
       const reply = data.reply || data.message || 'Kuch masla ho gaya, dobara try karo.'
@@ -66,17 +65,18 @@ export default function ChatbotWidget() {
         onClick={() => setOpen(v => !v)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="fixed bottom-5 right-5 z-50 w-14 h-14 bg-primary border-2 border-border dark:border-border-strong rounded-xl flex items-center justify-center shadow-[3px_3px_0px_var(--border)] dark:shadow-[3px_3px_0px_var(--border-strong)]"
+        className="fixed bottom-6 right-6 z-50 h-14 bg-foreground text-background rounded-full shadow-2xl flex items-center justify-center transition-all px-5 gap-3"
         aria-label="Open AI chatbot"
       >
         <AnimatePresence mode="wait">
           {open ? (
             <motion.span key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}>
-              <X className="w-6 h-6 text-primary-foreground" />
+              <X className="w-5 h-5 text-background" />
             </motion.span>
           ) : (
-            <motion.span key="bot" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}>
-              <Bot className="w-6 h-6 text-primary-foreground" />
+            <motion.span key="bot" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-background" />
+              <span className="text-sm font-bold tracking-tight">AI Chat</span>
             </motion.span>
           )}
         </AnimatePresence>
@@ -86,34 +86,33 @@ export default function ChatbotWidget() {
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ duration: 0.18 }}
-            className="fixed bottom-24 right-5 z-50 w-[92vw] max-w-sm h-[70vh] max-h-[520px] bg-card border-2 border-border dark:border-border-strong rounded-xl flex flex-col overflow-hidden"
-            style={{ boxShadow: 'var(--shadow-md)' }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed bottom-24 right-6 z-50 w-[90vw] sm:w-[400px] h-[65vh] max-h-[600px] bg-background hairline-all flex flex-col shadow-2xl"
           >
             {/* Header */}
-            <div className="flex items-center gap-2.5 px-4 py-3 border-b-2 border-border dark:border-border-strong bg-secondary text-secondary-foreground">
-              <div className="w-8 h-8 bg-primary border-2 border-border dark:border-border-strong rounded-lg flex items-center justify-center flex-shrink-0">
-                <Sparkles className="w-4 h-4 text-primary-foreground" />
+            <div className="flex items-center gap-4 px-6 py-5 hairline-b bg-secondary/20">
+              <div className="w-10 h-10 bg-foreground flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-4 h-4 text-background" />
               </div>
               <div className="min-w-0">
-                <p className="font-black text-sm truncate">EventSphere AI</p>
-                <p className="text-[11px] text-muted-foreground">Online • Ask anything about events</p>
+                <p className="font-extrabold text-lg tracking-tighter truncate">EventSphere AI</p>
+                <p className="meta-text text-muted-foreground mt-0.5">Digital Assistant</p>
               </div>
             </div>
 
             {/* Messages */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5 bg-background">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-6 space-y-6 custom-scrollbar bg-background">
               {messages.map((m, i) => (
-                <div key={i} className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
+                <div key={i} className={cn('flex w-full', m.role === 'user' ? 'justify-end' : 'justify-start')}>
                   <div
                     className={cn(
-                      'max-w-[80%] px-3 py-2 text-sm font-medium border-2 rounded-lg whitespace-pre-wrap break-words',
+                      'max-w-[85%] px-5 py-4 text-[13px] font-medium leading-relaxed break-words',
                       m.role === 'user'
-                        ? 'bg-primary text-primary-foreground border-border dark:border-border-strong'
-                        : 'bg-card border-border dark:border-border-strong'
+                        ? 'bg-foreground text-background'
+                        : 'bg-secondary/10 text-foreground hairline-all'
                     )}
                   >
                     {m.text}
@@ -121,31 +120,33 @@ export default function ChatbotWidget() {
                 </div>
               ))}
               {loading && (
-                <div className="flex justify-start">
-                  <div className="px-3 py-2 border-2 border-border dark:border-border-strong bg-card rounded-lg text-sm text-muted-foreground">
-                    Typing...
+                <div className="flex justify-start w-full">
+                  <div className="px-5 py-4 bg-secondary/10 hairline-all text-[13px] font-medium text-muted-foreground flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-pulse" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-foreground/60 animate-pulse delay-75" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-foreground animate-pulse delay-150" />
                   </div>
                 </div>
               )}
             </div>
 
             {/* Input */}
-            <div className="flex items-center gap-2 p-2.5 border-t-2 border-border dark:border-border-strong bg-card">
+            <div className="flex items-center gap-3 p-4 hairline-t bg-background">
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask a question..."
+                placeholder="Ask about events, schedules..."
                 disabled={loading}
-                className="flex-1 px-3 py-2 text-sm border-2 border-border dark:border-border-strong rounded-lg bg-background outline-none focus:ring-2 focus:ring-primary/40"
+                className="flex-1 editorial-input bg-transparent py-3"
               />
               <button
                 onClick={sendMessage}
                 disabled={loading || !input.trim()}
-                className="w-9 h-9 flex-shrink-0 bg-primary border-2 border-border dark:border-border-strong rounded-lg flex items-center justify-center disabled:opacity-40"
+                className="btn-editorial btn-editorial-primary w-12 h-12 flex-shrink-0 px-0 flex items-center justify-center disabled:opacity-40"
                 aria-label="Send"
               >
-                <Send className="w-4 h-4 text-primary-foreground" />
+                <Send className="w-4 h-4 text-background" />
               </button>
             </div>
           </motion.div>

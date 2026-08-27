@@ -1,27 +1,32 @@
+import 'dotenv/config'
 import dns from 'node:dns'
 import path from 'path'
 import { fileURLToPath } from 'url'
-
-import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
 import rateLimit from 'express-rate-limit'
-
 import connectDB from './config/db.js'
+
 import authRoutes         from './routes/authRoutes.js'
 import eventRoutes        from './routes/eventRoutes.js'
 import registrationRoutes from './routes/registrationRoutes.js'
 import notificationRoutes from './routes/notificationRoutes.js'
+import socialRoutes       from './routes/socialRoutes.js'
 import galleryRoutes      from './routes/galleryRoutes.js'
 import videoRoutes        from './routes/videoRoutes.js'
 import adminRoutes        from './routes/adminRoutes.js'
+import boothRoutes        from './routes/boothRoutes.js'
+import chatbotRoutes      from './routes/chatbotRoutes.js'
+import captionRoutes      from './routes/captionRoutes.js'
+import contactRoutes      from './routes/contactRoutes.js'
 
-dns.setServers(['8.8.8.8'])
-
+// ── __dirname setup (ES modules) ─────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url)
 const __dirname  = path.dirname(__filename)
+
+dns.setServers(['8.8.8.8'])
 
 connectDB()
 
@@ -62,10 +67,16 @@ app.use('/api/auth',          authLimiter, authRoutes)
 app.use('/api/events',        eventRoutes)
 app.use('/api/registrations', registrationRoutes)
 app.use('/api/notifications', notificationRoutes)
+app.use('/api/social',        socialRoutes)
 app.use('/api/gallery',       galleryRoutes)
 app.use('/api/videos',        videoRoutes)
 app.use('/api/admin',         adminRoutes)
+app.use('/api/booths',        boothRoutes)
+app.use('/api/chatbot',       chatbotRoutes)
+app.use('/api/captions',      captionRoutes)
+app.use('/api/contact',       contactRoutes)
 
+// ── Health check ─────────────────────────────────────────────────────────
 app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: Date.now() }))
 
 app.use((req, res) => res.status(404).json({ message: `Route ${req.originalUrl} not found` }))

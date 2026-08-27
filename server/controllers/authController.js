@@ -1,6 +1,7 @@
 import { body } from 'express-validator'
 import User from '../models/User.js'
 import { signToken, sendTokenResponse } from '../utils/jwt.js'
+import { sendMail, welcomeMail } from '../utils/email.js'
 
 // ── Validators ────────────────────────────────────────────────────────────
 
@@ -31,6 +32,9 @@ export const register = async (req, res) => {
     const user = await User.create({ name, email, phone, password, enrollNo, department })
     const token = signToken(user._id, user.role)
     sendTokenResponse(res, 201, user, token)
+    
+    // Fire and forget welcome email
+    sendMail({ to: user.email, ...welcomeMail(user.name) })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
@@ -71,7 +75,7 @@ export const getMe = async (req, res) => {
 // PATCH /api/auth/update-profile
 export const updateProfile = async (req, res) => {
   try {
-    const allowed = ['name', 'phone', 'department']
+    const allowed = ['name', 'phone', 'department', 'bio', 'interests', 'github', 'linkedin']
     const updates = {}
     allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k] })
 
