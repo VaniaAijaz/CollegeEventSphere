@@ -6,21 +6,28 @@
  *   eventId  {string}   — MongoDB event _id
  *   isAdmin  {boolean}  — admin gets edit/delete, organizer/participant gets book/cancel
  *   compact  {boolean}  — when true, hides page-level header (used inside dashboard tab)
+ *
+ * CHANGE LOG (this version):
+ *   - Added silent polling (every 8s) so booth status (booked/available/bookedByName)
+ *     stays fresh across users without needing a full page reload. e.g. Admin will
+ *     now see a booth flip to "Booked" shortly after an organizer books it.
+ *   - Added a manual Refresh button in the toolbar for an immediate re-fetch.
+ *   - Polling pauses while a booth form / bulk-create / confirm modal is open, so it
+ *     never clobbers in-progress input.
  */
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Ban, CheckCircle2, LayoutGrid, Loader2,
-  Pencil, Plus, Trash2, X, Zap,
+  AlertTriangle, Ban, CheckCircle2, LayoutGrid, Loader2,
+  Pencil, Plus, RefreshCw, Trash2, X, Zap,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { boothsApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
-
 /* ── constants ────────────────────────────────────────────────────────── */
 const EMPTY_BOOTH = { boothNumber: '', size: 'medium', price: '', description: '' }
 const EMPTY_BULK  = { rows: 3, columns: 5, size: 'medium', price: 100 }
-
+const POLL_INTERVAL_MS = 8000 // how often to silently re-check booth status
 const ZONE_CONFIG = [
   { name: 'Technical Area', rows: ['A','B','C'],     color: 'bg-zinc-100 dark:bg-zinc-900',          border: 'border-border', label: 'bg-zinc-200 dark:bg-zinc-800 text-foreground',          dot: 'bg-zinc-500'   },
   { name: 'Workshop Arena', rows: ['D','E'],          color: 'bg-stone-100 dark:bg-stone-900',         border: 'border-border', label: 'bg-stone-200 dark:bg-stone-800 text-foreground',         dot: 'bg-stone-500'  },
@@ -28,14 +35,12 @@ const ZONE_CONFIG = [
   { name: 'Food Court',     rows: ['I','J','K','L'],  color: 'bg-amber-50 dark:bg-amber-950/20',       border: 'border-border', label: 'bg-amber-100 dark:bg-amber-900/40 text-foreground',      dot: 'bg-amber-500'  },
 ]
 const getZone = (rowKey) => ZONE_CONFIG.find(z => z.rows.includes(rowKey)) || null
-
 /* ── helpers ──────────────────────────────────────────────────────────── */
 function parseBoothPosition(boothNumber) {
   const m = /^([A-Za-z]+)(\d+)$/.exec(boothNumber || '')
   if (!m) return { row: null, col: null }
   return { row: m[1].toUpperCase(), col: Number(m[2]) }
 }
-
 function buildFloorPlanGrid(booths) {
   const rows = {}; let maxCol = 0; const others = []
   booths.forEach(b => {
@@ -47,25 +52,64 @@ function buildFloorPlanGrid(booths) {
   })
   return { rows, rowKeys: Object.keys(rows).sort(), maxCol, others }
 }
-
+/* ── ConfirmModal — themed replacement for browser confirm() ────────────── */
+function ConfirmModal({ title, message, confirmLabel = 'Confirm', danger = false, submitting, onConfirm, onClose }) {
+  return (
+    <div className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm flex items-center justify-center p-6">
+      <motion.div initial={{ opacity: 0, y: 10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.98 }}
+        className="editorial-frame bg-background w-full max-w-sm overflow-hidden">
+        <div className="flex items-start gap-4 p-6">
+          <div className={cn(
+            'w-10 h-10 shrink-0 flex items-center justify-center border',
+            danger ? 'border-destructive/30 bg-destructive/10 text-destructive' : 'border-border bg-secondary/20 text-foreground'
+          )}>
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-lg font-extrabold tracking-tight mb-1">{title}</h2>
+            <p className="text-sm text-muted-foreground">{message}</p>
+          </div>
+        </div>
+        <div className="flex gap-3 p-6 pt-0">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="btn-editorial btn-editorial-outline flex-1 h-11 justify-center disabled:opacity-60"
+          >
+            No
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={submitting}
+            className={cn(
+              'flex-1 h-11 flex items-center justify-center gap-2 meta-text font-bold transition-colors disabled:opacity-60',
+              danger ? 'bg-destructive text-destructive-foreground hover:opacity-90' : 'btn-editorial btn-editorial-primary'
+            )}
+          >
+            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+            {confirmLabel}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
 /* ── FloorPlanCell ────────────────────────────────────────────────────── */
 function FloorPlanCell({ booth, isAdmin, onEdit, onBook, onCancel, actionLoading }) {
   if (!booth) return <div className="w-[90px] h-[76px] border border-dashed border-border/40" />
-
   const isBooked = booth.status === 'booked'
   const isMine   = booth.bookedByMe
   const clickable = isAdmin || !isBooked || (isBooked && isMine)
-
   let theme = 'border-border bg-background text-foreground hover:bg-secondary/10'
   if (isBooked && isMine)  theme = 'border-foreground bg-foreground text-background'
   else if (isBooked)       theme = 'border-border bg-secondary/20 text-muted-foreground opacity-60'
-
   const handleClick = () => {
     if (isAdmin)            return onEdit(booth)
     if (isBooked && isMine) return onCancel(booth)
     if (!isBooked)          return onBook(booth)
   }
-
   return (
     <button type="button" onClick={handleClick}
       disabled={!clickable || actionLoading === booth._id}
@@ -86,7 +130,6 @@ function FloorPlanCell({ booth, isAdmin, onEdit, onBook, onCancel, actionLoading
     </button>
   )
 }
-
 /* ── FloorPlan grid ───────────────────────────────────────────────────── */
 function FloorPlan({ booths, isAdmin, onEdit, onBook, onCancel, actionLoading }) {
   const { rows, rowKeys, maxCol, others } = buildFloorPlanGrid(booths)
@@ -94,7 +137,6 @@ function FloorPlan({ booths, isAdmin, onEdit, onBook, onCancel, actionLoading })
   const booked    = booths.filter(b => b.status === 'booked').length
   const pct       = booths.length ? Math.round((booked / booths.length) * 100) : 0
   const CELL = 90
-
   return (
     <div className="editorial-frame p-0">
       {/* header */}
@@ -109,7 +151,6 @@ function FloorPlan({ booths, isAdmin, onEdit, onBook, onCancel, actionLoading })
           <span className="flex items-center gap-2"><span className="w-3 h-3 bg-foreground inline-block" /> Booked ({booked})</span>
         </div>
       </div>
-
       {/* zone legend */}
       <div className="flex items-center gap-3 flex-wrap px-6 py-4 hairline-b bg-background">
         <span className="meta-text text-muted-foreground">Zones:</span>
@@ -119,13 +160,11 @@ function FloorPlan({ booths, isAdmin, onEdit, onBook, onCancel, actionLoading })
           </span>
         ))}
       </div>
-
       <div className="p-6 overflow-x-auto">
         {/* entrance */}
         <div className="bg-foreground text-background py-3 mb-6 text-center" style={{ minWidth: maxCol * (CELL + 8) + 48 }}>
           <span className="meta-text tracking-[0.3em]">↓ MAIN ENTRANCE ↓</span>
         </div>
-
         <div style={{ width: 'fit-content' }}>
           {maxCol > 0 && (
             <>
@@ -162,7 +201,6 @@ function FloorPlan({ booths, isAdmin, onEdit, onBook, onCancel, actionLoading })
               </div>
             </>
           )}
-
           {others.length > 0 && (
             <div className={cn('pt-6 hairline-t', maxCol > 0 && 'mt-10')}>
               <p className="meta-text text-muted-foreground mb-4">Other Booths</p>
@@ -174,12 +212,10 @@ function FloorPlan({ booths, isAdmin, onEdit, onBook, onCancel, actionLoading })
             </div>
           )}
         </div>
-
         {/* exit */}
         <div className="border border-border bg-secondary/20 py-3 mt-10 text-center" style={{ minWidth: maxCol * (CELL + 8) + 48 }}>
           <span className="meta-text text-muted-foreground tracking-[0.3em]">EMERGENCY EXIT / REAR GATE</span>
         </div>
-
         {/* stats */}
         <div className="mt-8 space-y-4" style={{ minWidth: maxCol * (CELL + 8) + 48 }}>
           <div className="grid grid-cols-3 hairline-border bg-background">
@@ -204,16 +240,13 @@ function FloorPlan({ booths, isAdmin, onEdit, onBook, onCancel, actionLoading })
     </div>
   )
 }
-
 /* ── BoothCard (grid view) ────────────────────────────────────────────── */
 function BoothCard({ booth, isAdmin, onEdit, onDelete, onBook, onCancel, actionLoading }) {
   const isBooked = booth.status === 'booked'
   const isMine   = booth.bookedByMe
-
   let theme = { bg: 'bg-background', badge: 'bg-secondary/50 text-foreground', dot: 'bg-foreground' }
   if (isBooked && isMine)  theme = { bg: 'bg-secondary/10', badge: 'bg-foreground text-background', dot: 'bg-background' }
   else if (isBooked)       theme = { bg: 'bg-secondary/20', badge: 'bg-secondary text-muted-foreground', dot: 'bg-muted-foreground' }
-
   return (
     <motion.div layout initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
       className={cn('relative editorial-frame p-6 flex flex-col justify-between min-h-[200px]', theme.bg)}
@@ -262,7 +295,6 @@ function BoothCard({ booth, isAdmin, onEdit, onDelete, onBook, onCancel, actionL
     </motion.div>
   )
 }
-
 /* ── Booth Form Modal ─────────────────────────────────────────────────── */
 function BoothFormModal({ editing, onClose, onSubmit, submitting }) {
   const [formData, setFormData] = useState(editing
@@ -270,7 +302,6 @@ function BoothFormModal({ editing, onClose, onSubmit, submitting }) {
     : EMPTY_BOOTH
   )
   const set = (k, v) => setFormData(p => ({ ...p, [k]: v }))
-
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-6">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
@@ -318,12 +349,10 @@ function BoothFormModal({ editing, onClose, onSubmit, submitting }) {
     </div>
   )
 }
-
 /* ── Bulk Create Modal ────────────────────────────────────────────────── */
 function BulkCreateModal({ onClose, onSubmit, submitting }) {
   const [bulkData, setBulkData] = useState(EMPTY_BULK)
   const set = (k, v) => setBulkData(p => ({ ...p, [k]: v }))
-
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-6">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
@@ -365,13 +394,13 @@ function BulkCreateModal({ onClose, onSubmit, submitting }) {
     </div>
   )
 }
-
 /* ══════════════════════════════════════════════════════════════════════════
    BoothManager — main exported component
 ═══════════════════════════════════════════════════════════════════════════ */
 export default function BoothManager({ eventId, eventTitle, isAdmin, compact = false }) {
   const [booths,        setBooths]        = useState([])
   const [loading,       setLoading]       = useState(true)
+  const [refreshing,    setRefreshing]    = useState(false) // manual/silent re-fetch indicator
   const [view,          setView]          = useState('floorplan')
   const [showForm,      setShowForm]      = useState(false)
   const [showBulk,      setShowBulk]      = useState(false)
@@ -379,20 +408,46 @@ export default function BoothManager({ eventId, eventTitle, isAdmin, compact = f
   const [submitting,    setSubmitting]    = useState(false)
   const [bulkSub,       setBulkSub]       = useState(false)
   const [actionLoading, setActionLoading] = useState(null)
-
-  const fetchBooths = useCallback(() => {
+  const [confirmState,  setConfirmState]  = useState(null) // { title, message, confirmLabel, danger, action }
+  const [confirmBusy,   setConfirmBusy]   = useState(false)
+  // track whether any modal is open, so polling doesn't interrupt in-progress edits
+  const modalOpenRef = useRef(false)
+  useEffect(() => {
+    modalOpenRef.current = showForm || showBulk || !!confirmState
+  }, [showForm, showBulk, confirmState])
+  /**
+   * fetchBooths — pass silent=true for background/manual refreshes so it doesn't
+   * trigger the full-page spinner (only used for the very first load).
+   */
+  const fetchBooths = useCallback((silent = false) => {
     if (!eventId) return
-    setLoading(true)
-    boothsApi.getByEvent(eventId)
+    if (silent) setRefreshing(true)
+    else setLoading(true)
+    return boothsApi.getByEvent(eventId)
       .then(({ data }) => setBooths(data.booths))
-      .catch(err => toast.error(err.response?.data?.message || 'Failed to load booths'))
-      .finally(() => setLoading(false))
+      .catch(err => {
+        if (!silent) toast.error(err.response?.data?.message || 'Failed to load booths')
+      })
+      .finally(() => {
+        if (silent) setRefreshing(false)
+        else setLoading(false)
+      })
   }, [eventId])
-
-  useEffect(() => { fetchBooths() }, [fetchBooths])
-
+  // initial load whenever the selected event changes
+  useEffect(() => { fetchBooths(false) }, [fetchBooths])
+  // background polling: keeps booth status (booked/available/bookedByName) fresh
+  // across users -- e.g. an admin viewing the floor plan will see a booth flip to
+  // "Booked" shortly after an organizer books it, without reloading the page.
+  useEffect(() => {
+    if (!eventId) return
+    const interval = setInterval(() => {
+      if (modalOpenRef.current) return // don't refetch while a form/modal is open
+      fetchBooths(true)
+    }, POLL_INTERVAL_MS)
+    return () => clearInterval(interval)
+  }, [eventId, fetchBooths])
+  const handleManualRefresh = () => fetchBooths(true)
   const openEdit = (booth) => { setEditingBooth(booth); setShowForm(true) }
-
   const handleBoothSubmit = async (formData) => {
     if (!formData.boothNumber.trim()) { toast.error('Booth number required'); return }
     setSubmitting(true)
@@ -416,7 +471,6 @@ export default function BoothManager({ eventId, eventTitle, isAdmin, compact = f
     } catch (err) { toast.error(err.response?.data?.message || 'Failed') }
     finally { setSubmitting(false) }
   }
-
   const handleBulkSubmit = async (bulkData) => {
     const rows = Number(bulkData.rows), columns = Number(bulkData.columns)
     if (!rows || rows < 1 || rows > 26)          { toast.error('Rows must be 1–26'); return }
@@ -427,21 +481,34 @@ export default function BoothManager({ eventId, eventTitle, isAdmin, compact = f
       toast.success(`${rows * columns} booths created!`)
       setShowBulk(false)
       // Directly re-fetch so new booths show up immediately
-      setLoading(true)
-      const { data } = await boothsApi.getByEvent(eventId)
-      setBooths(data.booths)
-      setLoading(false)
+      await fetchBooths(false)
     } catch (err) { toast.error(err.response?.data?.message || 'Failed') }
     finally { setBulkSub(false) }
   }
-
-  const handleDelete = async (booth) => {
-    if (!confirm(`Delete booth "${booth.boothNumber}"?`)) return
-    await boothsApi.delete(booth._id)
-    setBooths(p => p.filter(b => b._id !== booth._id))
-    toast.success('Booth deleted')
+  const closeConfirm = () => { if (!confirmBusy) setConfirmState(null) }
+  const runConfirm = async () => {
+    if (!confirmState) return
+    setConfirmBusy(true)
+    try {
+      await confirmState.action()
+      setConfirmState(null)
+    } finally {
+      setConfirmBusy(false)
+    }
   }
-
+  const handleDelete = (booth) => {
+    setConfirmState({
+      title: 'Delete Booth',
+      message: `Are you sure you want to delete booth "${booth.boothNumber}"? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      danger: true,
+      action: async () => {
+        await boothsApi.delete(booth._id)
+        setBooths(p => p.filter(b => b._id !== booth._id))
+        toast.success('Booth deleted')
+      },
+    })
+  }
   const handleBook = async (booth) => {
     setActionLoading(booth._id)
     try {
@@ -450,31 +517,35 @@ export default function BoothManager({ eventId, eventTitle, isAdmin, compact = f
       toast.success(`Booth ${booth.boothNumber} booked!`)
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to book')
-      if (err.response?.status === 409) fetchBooths()
+      if (err.response?.status === 409) fetchBooths(true)
     } finally { setActionLoading(null) }
   }
-
-  const handleCancel = async (booth) => {
-    if (!confirm(`Cancel booking for "${booth.boothNumber}"?`)) return
-    setActionLoading(booth._id)
-    try {
-      const { data } = await boothsApi.cancel(booth._id)
-      setBooths(p => p.map(b => b._id === booth._id ? { ...data.booth, bookedByMe: false } : b))
-      toast.success('Booking cancelled')
-    } catch (err) { toast.error(err.response?.data?.message || 'Failed') }
-    finally { setActionLoading(null) }
+  const handleCancel = (booth) => {
+    setConfirmState({
+      title: 'Cancel Booking',
+      message: `Are you sure you want to cancel your booking for "${booth.boothNumber}"?`,
+      confirmLabel: 'Cancel Booking',
+      danger: true,
+      action: async () => {
+        setActionLoading(booth._id)
+        try {
+          const { data } = await boothsApi.cancel(booth._id)
+          setBooths(p => p.map(b => b._id === booth._id ? { ...data.booth, bookedByMe: false } : b))
+          toast.success('Booking cancelled')
+        } finally {
+          setActionLoading(null)
+        }
+      },
+    })
   }
-
   const available = booths.filter(b => b.status === 'available').length
   const booked    = booths.filter(b => b.status === 'booked').length
-
   if (!eventId) return (
     <div className="editorial-frame bg-secondary/5 py-16 text-center">
       <LayoutGrid className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
       <p className="meta-text text-muted-foreground">Select an event to manage its booths</p>
     </div>
   )
-
   return (
     <div className="space-y-6">
       {/* toolbar */}
@@ -484,32 +555,43 @@ export default function BoothManager({ eventId, eventTitle, isAdmin, compact = f
           <span className="font-bold truncate">{eventTitle}</span>
         </div>
       )}
-
-      {isAdmin && (
-        <div className="flex flex-wrap gap-3 items-center justify-between">
-          <div className="flex gap-3">
-            <button onClick={() => { setShowBulk(true) }} className="btn-editorial btn-editorial-primary h-9 text-sm">
-              <Zap className="w-3.5 h-3.5 mr-2" /> Bulk Create
+      <div className="flex flex-wrap gap-3 items-center justify-between">
+        <div className="flex gap-3">
+          {isAdmin && (
+            <>
+              <button onClick={() => { setShowBulk(true) }} className="btn-editorial btn-editorial-primary h-9 text-sm">
+                <Zap className="w-3.5 h-3.5 mr-2" /> Bulk Create
+              </button>
+              <button onClick={() => { setEditingBooth(null); setShowForm(true) }} className="btn-editorial btn-editorial-outline h-9 text-sm">
+                <Plus className="w-3.5 h-3.5 mr-2" /> Add Booth
+              </button>
+            </>
+          )}
+          {/* Manual refresh -- available to admin & organizer so bookings made by
+              other users can be pulled in immediately instead of waiting for the
+              8s background poll or a full page reload. */}
+          <button
+            onClick={handleManualRefresh}
+            disabled={refreshing}
+            className="btn-editorial btn-editorial-outline h-9 text-sm"
+            title="Refresh booth status"
+          >
+            <RefreshCw className={cn('w-3.5 h-3.5 mr-2', refreshing && 'animate-spin')} /> Refresh
+          </button>
+        </div>
+        {isAdmin && booths.length > 0 && (
+          <div className="flex hairline-border">
+            <button onClick={() => setView('floorplan')}
+              className={cn('px-4 py-2 meta-text transition-colors hairline-r', view === 'floorplan' ? 'bg-foreground text-background' : 'hover:bg-secondary/20 text-muted-foreground')}>
+              Floor Plan
             </button>
-            <button onClick={() => { setEditingBooth(null); setShowForm(true) }} className="btn-editorial btn-editorial-outline h-9 text-sm">
-              <Plus className="w-3.5 h-3.5 mr-2" /> Add Booth
+            <button onClick={() => setView('grid')}
+              className={cn('px-4 py-2 meta-text transition-colors', view === 'grid' ? 'bg-foreground text-background' : 'hover:bg-secondary/20 text-muted-foreground')}>
+              Grid
             </button>
           </div>
-          {booths.length > 0 && (
-            <div className="flex hairline-border">
-              <button onClick={() => setView('floorplan')}
-                className={cn('px-4 py-2 meta-text transition-colors hairline-r', view === 'floorplan' ? 'bg-foreground text-background' : 'hover:bg-secondary/20 text-muted-foreground')}>
-                Floor Plan
-              </button>
-              <button onClick={() => setView('grid')}
-                className={cn('px-4 py-2 meta-text transition-colors', view === 'grid' ? 'bg-foreground text-background' : 'hover:bg-secondary/20 text-muted-foreground')}>
-                Grid
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
+        )}
+      </div>
       {loading ? (
         <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
       ) : booths.length === 0 ? (
@@ -529,7 +611,6 @@ export default function BoothManager({ eventId, eventTitle, isAdmin, compact = f
           ))}
         </div>
       )}
-
       {/* stats bar (non-compact) */}
       {!compact && booths.length > 0 && (
         <div className="meta-text flex gap-6">
@@ -537,7 +618,6 @@ export default function BoothManager({ eventId, eventTitle, isAdmin, compact = f
           <span className="text-muted-foreground"><span className="font-bold text-base">{booked}</span> Booked</span>
         </div>
       )}
-
       {/* Modals */}
       <AnimatePresence>
         {showForm && (
@@ -547,6 +627,17 @@ export default function BoothManager({ eventId, eventTitle, isAdmin, compact = f
         )}
         {showBulk && (
           <BulkCreateModal submitting={bulkSub} onClose={() => setShowBulk(false)} onSubmit={handleBulkSubmit} />
+        )}
+        {confirmState && (
+          <ConfirmModal
+            title={confirmState.title}
+            message={confirmState.message}
+            confirmLabel={confirmState.confirmLabel}
+            danger={confirmState.danger}
+            submitting={confirmBusy}
+            onConfirm={runConfirm}
+            onClose={closeConfirm}
+          />
         )}
       </AnimatePresence>
     </div>
