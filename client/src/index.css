@@ -64,6 +64,8 @@
   --input:               #FFFFFF;
   --ring:                #050505;      
 
+  --date-time-icon-filter: invert(0.2) sepia(1) saturate(2.2) hue-rotate(180deg) brightness(0.9);
+
   --radius:              0px;          /* Zero decorative clutter, sharp edges (or subtle 4px where specified later) */
 }
 
@@ -94,6 +96,8 @@
   --border:              #1A1A1A;      
   --input:               #0A0A0A;
   --ring:                #FAFAFA;
+
+  --date-time-icon-filter: invert(1) brightness(1.8) contrast(1.2);
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -308,7 +312,31 @@ input, select, textarea {
   background: transparent;
   color: var(--foreground);
   font-family: 'Inter', sans-serif;
+  caret-color: var(--foreground);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+select { cursor: pointer; }
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  color-scheme: light dark;
+  accent-color: var(--foreground);
+}
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  background: transparent;
+  filter: var(--date-time-icon-filter);
+  opacity: 1;
+}
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: var(--date-time-icon-filter);
 }
 input:focus, select:focus, textarea:focus {
   outline: none;

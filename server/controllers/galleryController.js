@@ -20,13 +20,14 @@ export const addGalleryItem = async (req, res) => {
   try {
     const { caption, category, event } = req.body
     if (!req.file) return res.status(400).json({ message: 'Image file is required' })
-    if (!caption || !category) return res.status(400).json({ message: 'Caption and category are required' })
 
+    const safeCaption = (caption || req.file.originalname || 'Gallery image').trim()
+    const safeCategory = category || 'Workshop'
     const file_url = `/uploads/gallery/${req.file.filename}`
 
     const item = await Gallery.create({
-      caption,
-      category,
+      caption: safeCaption,
+      category: safeCategory,
       file_url,
       event: event || undefined,
       uploadedBy: req.user?._id,

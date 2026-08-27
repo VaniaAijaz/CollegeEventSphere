@@ -418,27 +418,30 @@ export default function Dashboard() {
                 <div className="p-8 editorial-frame bg-card">
                   <div className="grid sm:grid-cols-2 gap-8 mb-10">
                     {[
-                      { label: 'Full Name', key: 'name',  placeholder: 'Your full name' },
-                      { label: 'Phone',     key: 'phone', placeholder: 'Phone Number' },
-                      { label: 'Department',key: 'department', placeholder: 'Computer Science' },
-                      { label: 'Bio',       key: 'bio', placeholder: 'A short bio' },
-                      { label: 'Interests', key: 'interests', placeholder: 'AI, Web Dev (comma separated)' },
-                      { label: 'GitHub',    key: 'github', placeholder: 'github.com/username' },
-                      { label: 'LinkedIn',  key: 'linkedin', placeholder: 'linkedin.com/in/username' },
+                      { label: 'Full Name',  key: 'name',       placeholder: 'Your full name' },
+                      { label: 'Phone',      key: 'phone',      placeholder: 'Phone Number' },
+                      { label: 'Department', key: 'department', placeholder: 'Computer Science' },
+                      { label: 'Bio',        key: 'bio',        placeholder: 'A short bio' },
+                      { label: 'Interests',  key: 'interests',  placeholder: 'AI, Web Dev (comma separated)' },
+                      { label: 'GitHub',     key: 'github',     placeholder: 'github.com/username' },
+                      { label: 'LinkedIn',   key: 'linkedin',   placeholder: 'linkedin.com/in/username' },
                     ].map(({ label, key, placeholder }) => (
                       <div key={key} className="space-y-3">
-                        <label className="meta-text text-muted-foreground">{label}</label>
+                        <label htmlFor={`profile-${key}`} className="meta-text text-muted-foreground">{label}</label>
                         <input
+                          id={`profile-${key}`}
+                          name={key}
                           value={profileForm[key]}
                           onChange={e => setProfileForm(p => ({ ...p, [key]: e.target.value }))}
                           placeholder={placeholder}
                           className="editorial-input w-full"
+                          autoComplete={key === 'name' ? 'name' : key === 'phone' ? 'tel' : 'off'}
                         />
                       </div>
                     ))}
                     <div className="space-y-3">
-                      <label className="meta-text text-muted-foreground">Email</label>
-                      <input value={user?.email} disabled
+                      <label htmlFor="profile-email" className="meta-text text-muted-foreground">Email</label>
+                      <input id="profile-email" name="email" value={user?.email} disabled
                         className="editorial-input w-full opacity-50 cursor-not-allowed bg-secondary/5" />
                     </div>
                   </div>

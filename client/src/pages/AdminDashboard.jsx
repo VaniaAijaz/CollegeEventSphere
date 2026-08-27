@@ -741,6 +741,58 @@ function AICopilot({ events }) {
 /* ══════════════════════════════════════════════════════════════════════════
    MAIN ADMIN DASHBOARD
 ══════════════════════════════════════════════════════════════════════════ */
+/* CUSTOM EVENT SELECT (shared — avoids OS native dropdown styling) */
+
+function AdminEventSelect({ events, value, onChange, placeholder = '— Select an event —' }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const selected = events.find(e => e._id === value)
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div ref={ref} className="relative" style={{ maxWidth: '360px' }}>
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-3 py-2.5 text-sm hairline-all bg-card hover:bg-secondary/30 transition-colors">
+        <span className={selected ? 'text-foreground font-medium' : 'text-muted-foreground'}>
+          {selected ? selected.title : placeholder}
+        </span>
+        <ChevronRight className={cn('w-4 h-4 text-muted-foreground transition-transform shrink-0 ml-2', open && 'rotate-90')} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.12 }}
+            className="absolute top-full left-0 right-0 z-50 bg-card hairline-all shadow-lg max-h-60 overflow-y-auto">
+            {events.length === 0 && (
+              <div className="px-3 py-3 text-sm text-muted-foreground">No events available</div>
+            )}
+            {events.map(ev => (
+              <button key={ev._id} type="button" onClick={() => { onChange(ev._id); setOpen(false) }}
+                className={cn(
+                  'w-full text-left px-3 py-2.5 text-sm transition-colors flex items-center justify-between gap-2',
+                  ev._id === value ? 'bg-foreground text-background' : 'hover:bg-secondary/50 text-foreground'
+                )}>
+                <span className="truncate">{ev.title}</span>
+                <span className={cn('micro-badge shrink-0 text-[9px]',
+                  ev._id === value ? 'bg-background/20 text-background' :
+                  ev.status === 'upcoming' ? 'micro-badge-accent' : 'micro-badge'
+                )}>{ev.status}</span>
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+
+/* MAIN ADMIN DASHBOARD */
 export default function AdminDashboard() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -763,6 +815,7 @@ export default function AdminDashboard() {
   const [announceTxt,      setAnnounceTxt]       = useState('')
   const [galleryFile,      setGalleryFile]       = useState(null)
   const [galleryCaption,   setGalleryCaption]    = useState('')
+  const [galleryCategory,  setGalleryCategory]   = useState('Workshop')
   const [galleryUploading, setGalleryUploading]  = useState(false)
   const [selectedEventId,  setSelectedEventId]   = useState('')
   const [sendingAnnounce,  setSendingAnnounce]   = useState(false)
@@ -781,7 +834,7 @@ export default function AdminDashboard() {
       if (sRes.status === 'fulfilled') setStats(sRes.value.data)
       if (eRes.status === 'fulfilled') setEvents(eRes.value.data?.events || eRes.value.data || [])
       if (uRes.status === 'fulfilled') setUsers(uRes.value.data?.users  || uRes.value.data  || [])
-      if (gRes.status === 'fulfilled') setGallery(gRes.value.data?.images || gRes.value.data || [])
+      if (gRes.status === 'fulfilled') setGallery(gRes.value.data?.items || gRes.value.data?.images || gRes.value.data || [])
     } catch {
       toast.error('Failed to load dashboard data')
     } finally {
@@ -843,12 +896,19 @@ export default function AdminDashboard() {
     setGalleryUploading(true)
     try {
       const fd = new FormData()
+      const safeCaption = (galleryCaption || galleryFile.name || 'Gallery image').trim()
+      const safeCategory = galleryCategory || 'Workshop'
+
       fd.append('image', galleryFile)
-      if (galleryCaption) fd.append('caption', galleryCaption)
+      fd.append('caption', safeCaption)
+      fd.append('category', safeCategory)
+
       const { data } = await galleryApi.upload(fd)
-      setGallery(g => [data.image || data, ...g])
+      const uploaded = data.item || data.image || data
+      setGallery(g => [uploaded, ...g])
       setGalleryFile(null)
       setGalleryCaption('')
+      setGalleryCategory('Workshop')
       toast.success('Image uploaded!')
     } catch { toast.error('Upload failed') } finally {
       setGalleryUploading(false)
@@ -1460,7 +1520,7 @@ export default function AdminDashboard() {
                     <table className="w-full text-sm">
                       <thead className="hairline-b bg-secondary">
                         <tr>
-                          {['Name', 'Email', 'Role', 'Status', 'Actions'].map(h => (
+                          {['Name', 'Email', 'Role', 'Status', 'Quick Actions', 'Account'].map(h => (
                             <th key={h} className="text-left px-4 py-2.5 meta-text font-semibold">{h}</th>
                           ))}
                         </tr>
@@ -1484,6 +1544,34 @@ export default function AdminDashboard() {
                               <span className={cn('micro-badge', u.suspended ? 'micro-badge-destructive' : 'micro-badge-accent')}>
                                 {u.suspended ? 'Suspended' : 'Active'}
                               </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                {u.role !== 'participant' && (
+                                  <button
+                                    onClick={() => handleChangeRole(u._id, 'participant')}
+                                    className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors border border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
+                                  >
+                                    Participant
+                                  </button>
+                                )}
+                                {u.role !== 'organizer' && (
+                                  <button
+                                    onClick={() => handleChangeRole(u._id, 'organizer')}
+                                    className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors bg-foreground text-background hover:opacity-90"
+                                  >
+                                    Make Organizer
+                                  </button>
+                                )}
+                                {u.role !== 'admin' && (
+                                  <button
+                                    onClick={() => handleChangeRole(u._id, 'admin')}
+                                    className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors border border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
+                                  >
+                                    Admin
+                                  </button>
+                                )}
+                              </div>
                             </td>
                             <td className="px-4 py-3">
                               <button
@@ -1533,7 +1621,21 @@ export default function AdminDashboard() {
                       </label>
                     </div>
                     <div className="space-y-1 flex-1 min-w-50">
-                      <label className="meta-text">Caption (optional)</label>
+                      <label htmlFor="gallery-category" className="meta-text">Category</label>
+                      <select
+                        id="gallery-category"
+                        name="category"
+                        value={galleryCategory}
+                        onChange={e => setGalleryCategory(e.target.value)}
+                        className="w-full px-3 py-2 text-sm bg-transparent"
+                      >
+                        {['Workshop', 'Technical', 'Cultural', 'Sports', 'Seminar', 'Annual Day', 'Intercollegiate'].map(option => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1 flex-1 min-w-50">
+                      <label htmlFor="gallery-caption" className="meta-text">Caption</label>
                       <input
                         type="text"
                         value={galleryCaption}

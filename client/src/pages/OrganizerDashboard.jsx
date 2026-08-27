@@ -6,7 +6,7 @@ import {
   Sparkles, Star, Target, Trash2, Upload, Users,
   X, XCircle, Zap,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
@@ -83,6 +83,73 @@ function StatusBadge({ status }) {
 /* ══════════════════════════════════════════════════════════════════════════
    SOUND FEEDBACK
 ══════════════════════════════════════════════════════════════════════════ */
+/* CUSTOM EVENT SELECT (no native dropdown — avoids OS styling issues) */
+
+function EventSelect({ events, value, onChange, placeholder = '— Select an event —' }) {
+  const [open, setOpen] = useState(false)
+  const ref  = useRef(null)
+  const selected = events.find(e => e._id === value)
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div ref={ref} className="relative" style={{ maxWidth: '360px' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-3 py-2.5 text-sm hairline-all bg-card hover:bg-secondary/30 transition-colors"
+      >
+        <span className={selected ? 'text-foreground font-medium' : 'text-muted-foreground'}>
+          {selected ? selected.title : placeholder}
+        </span>
+        <ChevronRight className={cn('w-4 h-4 text-muted-foreground transition-transform shrink-0 ml-2', open && 'rotate-90')} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.12 }}
+            className="absolute top-full left-0 right-0 z-50 bg-card hairline-all shadow-lg max-h-60 overflow-y-auto"
+          >
+            {events.length === 0 && (
+              <div className="px-3 py-3 text-sm text-muted-foreground">No events available</div>
+            )}
+            {events.map(ev => (
+              <button
+                key={ev._id}
+                type="button"
+                onClick={() => { onChange(ev._id); setOpen(false) }}
+                className={cn(
+                  'w-full text-left px-3 py-2.5 text-sm transition-colors flex items-center justify-between gap-2',
+                  ev._id === value
+                    ? 'bg-foreground text-background'
+                    : 'hover:bg-secondary/50 text-foreground'
+                )}
+              >
+                <span className="truncate">{ev.title}</span>
+                <span className={cn('micro-badge shrink-0 text-[9px]',
+                  ev._id === value ? 'bg-background/20 text-background' :
+                  ev.status === 'upcoming' ? 'micro-badge-accent' :
+                  ev.status === 'pending' ? 'micro-badge' : 'micro-badge'
+                )}>
+                  {ev.status}
+                </span>
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+
+
 function playScanSound(ok) {
   try {
     const Ctx = window.AudioContext || window.webkitAudioContext
@@ -111,23 +178,44 @@ function playScanSound(ok) {
 /* ══════════════════════════════════════════════════════════════════════════
    EVENT FORM MODAL  (create / edit)
 ══════════════════════════════════════════════════════════════════════════ */
-const Field = ({ label, name, type = 'text', placeholder = '', form, set }) => (
-  <div className="space-y-1">
-    <label className="meta-text">{label}</label>
-    <input type={type} value={form[name]} onChange={e => set(name, e.target.value)}
-      placeholder={placeholder} className="w-full px-3 py-2 text-sm bg-transparent" />
-  </div>
-)
+/* Standalone field components — defined OUTSIDE modal to prevent re-mount on keystroke */
+function FormField({ label, name, type = 'text', placeholder = '', form, set, prefix = 'evt' }) {
+  return (
+    <div className="space-y-1">
+      <label htmlFor={`${prefix}-${name}`} className="meta-text">{label}</label>
+      <input
+        id={`${prefix}-${name}`}
+        name={name}
+        type={type}
+        value={form[name]}
+        onChange={e => set(name, e.target.value)}
+        placeholder={placeholder}
+        className="w-full px-3 py-2 text-sm bg-transparent"
+        autoComplete={type === 'date' || type === 'time' ? 'off' : undefined}
+      />
+    </div>
+  )
+}
+function FormSelect({ label, name, options, form, set, prefix = 'evt' }) {
+  return (
+    <div className="space-y-1">
+      <label htmlFor={`${prefix}-${name}`} className="meta-text">{label}</label>
+      <select
+        id={`${prefix}-${name}`}
+        name={name}
+        value={form[name]}
+        onChange={e => set(name, e.target.value)}
+        className="w-full px-3 py-2 text-sm bg-card"
+      >
+        <option value="">Select…</option>
+        {options.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+    </div>
+  )
+}
 
-const SelectField = ({ label, name, options, form, set }) => (
-  <div className="space-y-1">
-    <label className="meta-text">{label}</label>
-    <select value={form[name]} onChange={e => set(name, e.target.value)} className="w-full px-3 py-2 text-sm bg-card">
-      <option value="">Select…</option>
-      {options.map(o => <option key={o} value={o}>{o}</option>)}
-    </select>
-  </div>
-)
+const Field = FormField
+const SelectField = FormSelect
 
 function EventFormModal({ initial, onClose, onSaved }) {
   const [form, setForm] = useState(
@@ -186,8 +274,14 @@ function EventFormModal({ initial, onClose, onSaved }) {
       <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-        <motion.div className="relative editorial-frame bg-card w-full max-w-2xl max-h-[90vh] overflow-y-auto z-10"
-          initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}>
+        <motion.div
+          className="relative editorial-frame bg-card w-full max-w-2xl max-h-[90vh] overflow-y-auto z-10"
+          initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
 
           {/* Header */}
           <div className="flex items-center justify-between p-5 hairline-b">
@@ -304,8 +398,12 @@ function RolesModal({ onClose, onSend }) {
       <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-        <motion.div className="relative editorial-frame bg-card w-full max-w-sm z-10"
-          initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}>
+        <motion.div
+          className="relative editorial-frame bg-card w-full max-w-sm z-10"
+          initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center justify-between p-5 hairline-b">
             <h2 className="text-base font-black tracking-tight">Target Roles</h2>
             <button onClick={onClose} className="p-1.5 hover:bg-secondary rounded-full transition-colors">
