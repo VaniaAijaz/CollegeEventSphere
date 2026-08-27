@@ -81,7 +81,72 @@ function StatusBadge({ status }) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   SOUND FEEDBACK
+   CUSTOM EVENT SELECT  (no native dropdown — avoids OS styling issues)
+══════════════════════════════════════════════════════════════════════════ */
+function EventSelect({ events, value, onChange, placeholder = '— Select an event —' }) {
+  const [open, setOpen] = useState(false)
+  const ref  = useRef(null)
+  const selected = events.find(e => e._id === value)
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div ref={ref} className="relative" style={{ maxWidth: '360px' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-3 py-2.5 text-sm hairline-all bg-card hover:bg-secondary/30 transition-colors"
+      >
+        <span className={selected ? 'text-foreground font-medium' : 'text-muted-foreground'}>
+          {selected ? selected.title : placeholder}
+        </span>
+        <ChevronRight className={cn('w-4 h-4 text-muted-foreground transition-transform shrink-0 ml-2', open && 'rotate-90')} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.12 }}
+            className="absolute top-full left-0 right-0 z-50 bg-card hairline-all shadow-lg max-h-60 overflow-y-auto"
+          >
+            {events.length === 0 && (
+              <div className="px-3 py-3 text-sm text-muted-foreground">No events available</div>
+            )}
+            {events.map(ev => (
+              <button
+                key={ev._id}
+                type="button"
+                onClick={() => { onChange(ev._id); setOpen(false) }}
+                className={cn(
+                  'w-full text-left px-3 py-2.5 text-sm transition-colors flex items-center justify-between gap-2',
+                  ev._id === value
+                    ? 'bg-foreground text-background'
+                    : 'hover:bg-secondary/50 text-foreground'
+                )}
+              >
+                <span className="truncate">{ev.title}</span>
+                <span className={cn('micro-badge shrink-0 text-[9px]',
+                  ev._id === value ? 'bg-background/20 text-background' :
+                  ev.status === 'upcoming' ? 'micro-badge-accent' :
+                  ev.status === 'pending' ? 'micro-badge' : 'micro-badge'
+                )}>
+                  {ev.status}
+                </span>
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+
 ══════════════════════════════════════════════════════════════════════════ */
 function playScanSound(ok) {
   try {
@@ -831,14 +896,11 @@ export default function OrganizerDashboard() {
                 <div className="editorial-frame p-5 space-y-4">
                   <div>
                     <p className="meta-text mb-2">Select Event</p>
-                    <div className="relative" style={{ maxWidth: '360px' }}>
-                      <select value={selectedEventId} onChange={e => setSelectedEventId(e.target.value)}
-                        style={{ WebkitAppearance:'none', MozAppearance:'none', appearance:'none', background:'var(--card)', color:'var(--foreground)', border:'1px solid var(--border)', borderRadius:'0', width:'100%', height:'40px', padding:'0 2.5rem 0 0.75rem', fontSize:'0.875rem', fontFamily:'Inter, sans-serif', outline:'none', cursor:'pointer' }}>
-                        <option value="">— Select an event —</option>
-                        {events.map(ev => <option key={ev._id} value={ev._id}>{ev.title}</option>)}
-                      </select>
-                      <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none rotate-90" />
-                    </div>
+                    <EventSelect
+                      events={events}
+                      value={selectedEventId}
+                      onChange={setSelectedEventId}
+                    />
                   </div>
 
                   {selectedEventId ? (
@@ -952,15 +1014,11 @@ export default function OrganizerDashboard() {
               <motion.div key="registrations" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
                 <div className="editorial-frame p-5">
                   <p className="meta-text mb-2">Select Event to View Registrations</p>
-                  <div className="relative" style={{ maxWidth: '360px' }}>
-                    <select value={regEventId}
-                      onChange={e => { setRegEventId(e.target.value); if (e.target.value) fetchRegistrations(e.target.value) }}
-                      style={{ WebkitAppearance:'none', MozAppearance:'none', appearance:'none', background:'var(--card)', color:'var(--foreground)', border:'1px solid var(--border)', borderRadius:'0', width:'100%', height:'40px', padding:'0 2.5rem 0 0.75rem', fontSize:'0.875rem', fontFamily:'Inter, sans-serif', outline:'none', cursor:'pointer' }}>
-                      <option value="">— Select an event —</option>
-                      {events.map(ev => <option key={ev._id} value={ev._id}>{ev.title}</option>)}
-                    </select>
-                    <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none rotate-90" />
-                  </div>
+                  <EventSelect
+                    events={events}
+                    value={regEventId}
+                    onChange={(id) => { setRegEventId(id); if (id) fetchRegistrations(id) }}
+                  />
                 </div>
 
                 {regEventId && (

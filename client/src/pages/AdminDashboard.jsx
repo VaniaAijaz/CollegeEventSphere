@@ -736,6 +736,57 @@ function AICopilot({ events }) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
+   CUSTOM EVENT SELECT  (shared — avoids OS native dropdown styling)
+══════════════════════════════════════════════════════════════════════════ */
+function AdminEventSelect({ events, value, onChange, placeholder = '— Select an event —' }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const selected = events.find(e => e._id === value)
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div ref={ref} className="relative" style={{ maxWidth: '360px' }}>
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-3 py-2.5 text-sm hairline-all bg-card hover:bg-secondary/30 transition-colors">
+        <span className={selected ? 'text-foreground font-medium' : 'text-muted-foreground'}>
+          {selected ? selected.title : placeholder}
+        </span>
+        <ChevronRight className={cn('w-4 h-4 text-muted-foreground transition-transform shrink-0 ml-2', open && 'rotate-90')} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.12 }}
+            className="absolute top-full left-0 right-0 z-50 bg-card hairline-all shadow-lg max-h-60 overflow-y-auto">
+            {events.length === 0 && (
+              <div className="px-3 py-3 text-sm text-muted-foreground">No events available</div>
+            )}
+            {events.map(ev => (
+              <button key={ev._id} type="button" onClick={() => { onChange(ev._id); setOpen(false) }}
+                className={cn(
+                  'w-full text-left px-3 py-2.5 text-sm transition-colors flex items-center justify-between gap-2',
+                  ev._id === value ? 'bg-foreground text-background' : 'hover:bg-secondary/50 text-foreground'
+                )}>
+                <span className="truncate">{ev.title}</span>
+                <span className={cn('micro-badge shrink-0 text-[9px]',
+                  ev._id === value ? 'bg-background/20 text-background' :
+                  ev.status === 'upcoming' ? 'micro-badge-accent' : 'micro-badge'
+                )}>{ev.status}</span>
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
    MAIN ADMIN DASHBOARD
 ══════════════════════════════════════════════════════════════════════════ */
 export default function AdminDashboard() {
@@ -829,6 +880,14 @@ export default function AdminDashboard() {
       setUsers(us => us.map(u => u._id === id ? { ...u, suspended: data.user?.suspended ?? !u.suspended } : u))
       toast.success('User status updated')
     } catch { toast.error('Failed to update user') }
+  }
+
+  const handleChangeRole = async (id, newRole) => {
+    try {
+      await adminApi.changeRole(id, newRole)
+      setUsers(us => us.map(u => u._id === id ? { ...u, role: newRole } : u))
+      toast.success(`Role updated to ${newRole}`)
+    } catch { toast.error('Failed to update role') }
   }
 
   const handleGalleryUpload = async (e) => {
@@ -1396,36 +1455,11 @@ export default function AdminDashboard() {
                 <div className="editorial-frame p-5 space-y-4">
                   <div>
                     <p className="meta-text mb-2">Select Event</p>
-                    <div className="relative" style={{ maxWidth: '360px' }}>
-                      <select
-                        value={selectedEventId}
-                        onChange={e => setSelectedEventId(e.target.value)}
-                        style={{
-                          WebkitAppearance: 'none',
-                          MozAppearance:    'none',
-                          appearance:       'none',
-                          background:       'var(--card)',
-                          color:            'var(--foreground)',
-                          border:           '1px solid var(--border)',
-                          borderRadius:     '0',
-                          width:            '100%',
-                          height:           '40px',
-                          padding:          '0 2.5rem 0 0.75rem',
-                          fontSize:         '0.875rem',
-                          fontFamily:       'Inter, sans-serif',
-                          outline:          'none',
-                          cursor:           'pointer',
-                        }}
-                      >
-                        <option value="">— Select an event —</option>
-                        {events.map(ev => (
-                          <option key={ev._id} value={ev._id}>{ev.title}</option>
-                        ))}
-                      </select>
-                      <ChevronRight
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none rotate-90"
-                      />
-                    </div>
+                    <AdminEventSelect
+                      events={events}
+                      value={selectedEventId}
+                      onChange={setSelectedEventId}
+                    />
                   </div>
 
                   {selectedEventId ? (
@@ -1444,7 +1478,77 @@ export default function AdminDashboard() {
                 USERS
             ═══════════════════════════════════════════════════ */}
             {activeTab === 'users' && (
-              <motion.div key="users" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <motion.div key="users" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+
+                {/* ── Organizers section ── */}
+                <div className="editorial-frame">
+                  <div className="flex items-center justify-between p-4 hairline-b">
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-accent" />
+                      <span className="meta-text">Organizers ({users.filter(u => u.role === 'organizer').length})</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground hidden sm:block">
+                      Promote participants to organizer or revoke organizer role
+                    </p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="hairline-b bg-secondary">
+                        <tr>
+                          {['Name', 'Email', 'Status', 'Actions'].map(h => (
+                            <th key={h} className="text-left px-4 py-2.5 meta-text font-semibold">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {users.filter(u => u.role === 'organizer').map(u => (
+                          <tr key={u._id} className="hover:bg-secondary/50 transition-colors">
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 bg-accent text-accent-foreground rounded-full flex items-center justify-center text-xs font-black shrink-0">
+                                  {u.name?.[0]?.toUpperCase() || '?'}
+                                </div>
+                                <span className="font-medium truncate max-w-30">{u.name}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
+                            <td className="px-4 py-3">
+                              <span className={cn('micro-badge', u.suspended ? 'micro-badge-destructive' : 'micro-badge-accent')}>
+                                {u.suspended ? 'Suspended' : 'Active'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleChangeRole(u._id, 'participant')}
+                                  className="btn-editorial btn-editorial-outline text-xs text-destructive"
+                                  title="Revoke organizer role"
+                                >
+                                  <Trash2 className="w-3 h-3" /> Revoke
+                                </button>
+                                <button
+                                  onClick={() => handleToggleUser(u._id)}
+                                  className={cn('btn-editorial text-xs', u.suspended ? 'btn-editorial-accent' : 'btn-editorial-outline')}
+                                >
+                                  {u.suspended ? 'Activate' : 'Suspend'}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {users.filter(u => u.role === 'organizer').length === 0 && (
+                          <tr>
+                            <td colSpan={4} className="text-center py-8 text-muted-foreground text-sm">
+                              No organizers yet. Promote participants below.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* ── All users table ── */}
                 <div className="editorial-frame">
                   <div className="flex items-center gap-2 p-4 hairline-b">
                     <Users className="w-4 h-4" />
@@ -1454,7 +1558,7 @@ export default function AdminDashboard() {
                     <table className="w-full text-sm">
                       <thead className="hairline-b bg-secondary">
                         <tr>
-                          {['Name', 'Email', 'Role', 'Status', 'Actions'].map(h => (
+                          {['Name', 'Email', 'Role', 'Status', 'Change Role', 'Actions'].map(h => (
                             <th key={h} className="text-left px-4 py-2.5 meta-text font-semibold">{h}</th>
                           ))}
                         </tr>
@@ -1472,12 +1576,35 @@ export default function AdminDashboard() {
                             </td>
                             <td className="px-4 py-3 text-muted-foreground truncate max-w-40">{u.email}</td>
                             <td className="px-4 py-3">
-                              <span className="micro-badge capitalize">{u.role}</span>
+                              <span className={cn('micro-badge capitalize',
+                                u.role === 'admin' ? 'bg-foreground text-background' :
+                                u.role === 'organizer' ? 'micro-badge-accent' : 'micro-badge'
+                              )}>{u.role}</span>
                             </td>
                             <td className="px-4 py-3">
                               <span className={cn('micro-badge', u.suspended ? 'micro-badge-destructive' : 'micro-badge-accent')}>
                                 {u.suspended ? 'Suspended' : 'Active'}
                               </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              {/* Inline role switcher — no native select dropdown */}
+                              <div className="flex items-center gap-1">
+                                {['participant', 'organizer', 'admin'].map(role => (
+                                  <button
+                                    key={role}
+                                    onClick={() => u.role !== role && handleChangeRole(u._id, role)}
+                                    disabled={u.role === role}
+                                    className={cn(
+                                      'px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors hairline-all',
+                                      u.role === role
+                                        ? 'bg-foreground text-background cursor-default'
+                                        : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                    )}
+                                  >
+                                    {role === 'participant' ? 'Part.' : role === 'organizer' ? 'Org.' : 'Admin'}
+                                  </button>
+                                ))}
+                              </div>
                             </td>
                             <td className="px-4 py-3">
                               <button
