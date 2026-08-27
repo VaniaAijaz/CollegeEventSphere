@@ -131,6 +131,35 @@ export default function About() {
         </div>
       </div>
 
+
+      {/* Social Media Follow Section */}
+      <div className="w-full border-t-4 border-border dark:border-border-strong border-dashed my-10" />
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 py-20">
+        <Reveal className="mb-12 text-center">
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4">Stay Connected</p>
+          <h2 className="text-4xl font-black">Follow Us</h2>
+          <p className="text-muted-foreground font-semibold mt-3">Get real-time updates and behind-the-scenes content</p>
+        </Reveal>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+          {[
+            { name: 'Instagram', handle: '@eventsphere.college', color: 'from-pink-500 to-orange-400', url: 'https://instagram.com' },
+            { name: 'Twitter/X', handle: '@eventsphere',         color: 'from-slate-700 to-slate-900', url: 'https://twitter.com' },
+            { name: 'LinkedIn',  handle: 'EventSphere College',  color: 'from-blue-600 to-blue-800',   url: 'https://linkedin.com' },
+            { name: 'YouTube',   handle: 'EventSphere Media',    color: 'from-red-500 to-red-700',     url: 'https://youtube.com' },
+          ].map((s, i) => (
+            <Reveal key={s.name} delay={i * 0.08}>
+              <a href={s.url} target="_blank" rel="noopener noreferrer"
+                className={`block p-6 rounded-2xl bg-gradient-to-br ${s.color} text-white text-center hover:-translate-y-1 hover:shadow-xl transition-all duration-300`}
+              >
+                <p className="font-black text-lg mb-1">{s.name}</p>
+                <p className="text-xs font-semibold opacity-80">{s.handle}</p>
+              </a>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+
+
       {/* CTA */}
       <div className="max-w-7xl mx-auto px-6 lg:px-12 pb-32 mt-12">
         <Reveal>

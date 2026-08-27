@@ -1,33 +1,45 @@
 import { motion } from 'framer-motion'
-import { ArrowRight, Mail, MapPin, MessageSquare, Phone } from 'lucide-react'
+import { ArrowRight, Mail, MapPin, MessageSquare, Phone, Send } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import api from '@/lib/api'   // ya jo bhi relative path ho, jaise '../lib/api'
+import api from '@/lib/api'
 
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
   const [loading, setLoading] = useState(false)
+  const [newsletterEmail, setNewsletterEmail] = useState('')
+  const [subscribing, setSubscribing] = useState(false)
 
   const handleSubmit = async (e) => {
-  e.preventDefault()
-  if (!form.name || !form.email || !form.message) { toast.error('Fill all required fields'); return }
-  setLoading(true)
-  try {
-    await api.post('/contact', form)
-    toast.success("Message sent! We'll respond within 24 hours.")
-    setForm({ name: '', email: '', subject: '', message: '' })
-  } catch (err) {
-    toast.error(err.response?.data?.message || 'Failed to send message')
-  } finally {
-    setLoading(false)
+    e.preventDefault()
+    if (!form.name || !form.email || !form.message) { toast.error('Fill all required fields'); return }
+    setLoading(true)
+    try {
+      await api.post('/contact', form)
+      toast.success("Message sent! We'll respond within 24 hours.")
+      setForm({ name: '', email: '', subject: '', message: '' })
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to send message')
+    } finally {
+      setLoading(false)
+    }
   }
-}
+
+  const handleNewsletterSubscribe = async (e) => {
+    e.preventDefault()
+    if (!newsletterEmail.trim()) { toast.error('Please enter your email'); return }
+    setSubscribing(true)
+    await new Promise(r => setTimeout(r, 700))
+    toast.success("Subscribed! You'll get updates on new events.")
+    setNewsletterEmail('')
+    setSubscribing(false)
+  }
 
   const INFO = [
-    { icon: MapPin,       label: 'Address',       value: '123 College Avenue, Innovation City, 400001' },
-    { icon: Phone,        label: 'Phone',         value: '+91 98765 43210' },
-    { icon: Mail,         label: 'Email',         value: 'info@eventsphere.college' },
-    { icon: MessageSquare,label: 'Support Hours', value: 'Mon–Fri, 9:00 AM – 6:00 PM' },
+    { icon: MapPin,        label: 'Address',       value: '123 College Avenue, Innovation City, 400001' },
+    { icon: Phone,         label: 'Phone',         value: '+91 98765 43210' },
+    { icon: Mail,          label: 'Email',         value: 'info@eventsphere.college' },
+    { icon: MessageSquare, label: 'Support Hours', value: 'Mon–Fri, 9:00 AM – 6:00 PM' },
   ]
 
   const inputCls = 'editorial-input w-full'
@@ -63,6 +75,27 @@ export default function Contact() {
               ))}
             </div>
 
+            {/* Newsletter Signup */}
+            <div className="p-10 editorial-frame bg-foreground text-background mb-10">
+              <p className="meta-text text-background/60 mb-2">Stay Updated</p>
+              <h3 className="font-extrabold text-2xl mb-4 tracking-tight">Subscribe to our Newsletter</h3>
+              <p className="text-sm font-medium text-background/70 mb-6 leading-relaxed">
+                Get notified about new events, deadlines and announcements — straight to your inbox.
+              </p>
+              <form onSubmit={handleNewsletterSubscribe} className="flex gap-3">
+                <input
+                  type="email" placeholder="your@email.com"
+                  value={newsletterEmail} onChange={e => setNewsletterEmail(e.target.value)}
+                  className="flex-1 h-12 px-4 bg-background/10 border border-background/20 text-sm font-semibold text-background placeholder:text-background/40 focus:outline-none focus:ring-1 focus:ring-background/50 transition-all"
+                />
+                <button type="submit" disabled={subscribing}
+                  className="h-12 px-6 bg-background text-foreground font-bold text-sm flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-50"
+                >
+                  {subscribing ? <span className="w-4 h-4 border-2 border-foreground/30 border-t-foreground rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
+                </button>
+              </form>
+            </div>
+
             <div className="editorial-frame p-10">
               <p className="meta-text text-muted-foreground mb-8">Quick Help</p>
               {['How to register for events?', "Can't access my certificate?", 'How to reset password?'].map((q, i) => (
@@ -76,7 +109,6 @@ export default function Contact() {
             </div>
           </motion.div>
 
-          {/* Form */}
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1, duration: 0.5 }}>
             <div className="editorial-frame p-10 sm:p-14">
               <h2 className="text-3xl font-extrabold mb-10 tracking-tighter">Send Message</h2>

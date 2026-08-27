@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
-import { eventsApi, registrationsApi } from '@/lib/api'
+import { eventsApi, registrationsApi, videosApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 export default function EventDetail() {
@@ -19,6 +19,9 @@ export default function EventDetail() {
   const [registered, setRegistered] = useState(false)
   const [regLoading, setRegLoading] = useState(false)
   const [tab,        setTab]        = useState('details')
+  const [highlightVideos, setHighlightVideos] = useState([])
+
+  const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')
 
   useEffect(() => {
     eventsApi.getById(id)
@@ -37,6 +40,14 @@ export default function EventDetail() {
       })
       .catch(() => {})
   }, [isAuth, id])
+
+  // Load event-highlight videos linked to this event
+  useEffect(() => {
+    if (!event?._id) return
+    videosApi.getAll({ type: 'event-highlight', event: event._id })
+      .then(({ data }) => setHighlightVideos(data.videos || []))
+      .catch(() => {})
+  }, [event?._id])
 
   if (loading) return (
     <div className="min-h-screen pt-[72px] flex items-center justify-center bg-background">
@@ -100,21 +111,20 @@ export default function EventDetail() {
       {/* Editorial Cinematic Hero */}
       <div className="relative h-[60vh] min-h-[400px] bg-foreground overflow-hidden">
         {event.image ? (
-          <motion.img 
+          <motion.img
             initial={{ scale: 1.1 }} animate={{ scale: 1 }} transition={{ duration: 1.5, ease: 'easeOut' }}
-            src={event.image} alt={event.title} className="w-full h-full object-cover opacity-60" 
+            src={event.image} alt={event.title} className="w-full h-full object-cover opacity-60"
           />
         ) : (
           <div className="w-full h-full bg-secondary/10" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-        
+
         <div className="absolute top-8 left-5 sm:left-12 z-20">
           <Link to="/events" className="btn-editorial btn-editorial-outline !text-background !border-background/30 hover:!bg-background hover:!text-foreground px-4 py-2 text-xs">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back
           </Link>
         </div>
-
         {event.featured && (
           <div className="absolute top-8 right-5 sm:right-12 z-20">
              <p className="meta-text text-accent tracking-[0.2em] flex items-center gap-2">
@@ -122,7 +132,6 @@ export default function EventDetail() {
              </p>
           </div>
         )}
-
         <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-12 z-20 max-w-[90rem] mx-auto flex flex-col justify-end">
            <div className="flex flex-wrap gap-3 mb-6">
               <span className="px-3 py-1 bg-background text-foreground text-[10px] font-bold uppercase tracking-widest rounded-sm">{event.category}</span>
@@ -137,11 +146,11 @@ export default function EventDetail() {
 
       <div className="max-w-[90rem] mx-auto px-5 sm:px-12 py-16">
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-20">
-          
+
           {/* Main Details */}
           <div className="lg:col-span-8">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
-              
+
               <div className="grid sm:grid-cols-2 gap-x-8 gap-y-6 mb-16 pt-8 hairline-t">
                 {[
                   { icon: Calendar, label: 'Date',      value: format(new Date(event.date), 'EEEE, MMMM d, yyyy') },
@@ -177,6 +186,26 @@ export default function EventDetail() {
                   <div className="prose prose-neutral dark:prose-invert max-w-none text-foreground/80 font-medium leading-relaxed mb-12 text-lg">
                     {event.description.split('\\n').map((p, i) => <p key={i}>{p}</p>)}
                   </div>
+
+                  {highlightVideos.length > 0 && (
+                    <div className="mb-12">
+                      <h2 className="text-2xl font-extrabold mb-6 tracking-tight">Event Highlights</h2>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        {highlightVideos.map(v => (
+                          <div key={v._id} className="editorial-frame overflow-hidden bg-black">
+                            <video
+                              src={`${API_ROOT}${v.video_url}`}
+                              className="w-full h-56 object-cover"
+                              controls
+                              loop
+                              muted
+                            />
+                            <p className="p-4 text-sm font-semibold bg-card">{v.title}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {event.registrationDeadline && (
                     <div className="p-6 editorial-frame bg-secondary/10 flex items-start gap-4">
@@ -232,7 +261,6 @@ export default function EventDetail() {
                    />
                 </div>
               </div>
-
               {registered ? (
                 <div className="p-6 mb-8 editorial-frame bg-secondary/10 flex items-start gap-4">
                   <CheckCircle2 className="w-6 h-6 text-foreground shrink-0" />
@@ -250,11 +278,9 @@ export default function EventDetail() {
                     isFull ? 'Event Full' : 'Secure Access'}
                 </button>
               )}
-
               <button className="btn-editorial btn-editorial-outline w-full mb-10" onClick={downloadICS}>
                 <CalendarPlus className="w-4 h-4 mr-2" /> Add to Calendar (.ics)
               </button>
-
               <div className="mb-8 hairline-t pt-8">
                 <div className="meta-text text-muted-foreground mb-4">Share Exhibition</div>
                 <div className="flex gap-3">
@@ -279,7 +305,6 @@ export default function EventDetail() {
                   ))}
                 </div>
               </div>
-
               <div className="flex items-start gap-3 p-4 editorial-frame bg-secondary/10">
                 <Award className="w-4 h-4 text-foreground mt-0.5 shrink-0" />
                 <p className="text-xs font-semibold text-muted-foreground leading-relaxed">
