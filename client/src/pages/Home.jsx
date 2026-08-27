@@ -221,7 +221,7 @@ export default function Home() {
       <section
         ref={heroRef}
         onMouseMove={handleHeroMouseMove}
-        className="relative overflow-hidden border-b-2 border-border dark:border-border-strong bg-foreground"
+        className="relative overflow-hidden border-b-2 border-border dark:border-border-strong bg-black"
         style={{ '--x': '50%', '--y': '50%' }}
       >
         {/* Video background â€” admin ki uploaded video, ya fallback demo video (kabhi khali nahi rahega, loop mein hamesha chalega) */}
@@ -234,7 +234,7 @@ export default function Home() {
         </video>
 
         {/* Dark overlay so text stays readable */}
-        <div className="absolute inset-0 bg-gradient-to-b from-foreground/70 via-foreground/60 to-foreground/85" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/85" />
         {/* Cursor-follow glow spotlight */}
         <div
           className="pointer-events-none absolute inset-0 transition-opacity duration-300"

@@ -162,3 +162,45 @@ export const deleteChat = async (req, res) => {
     res.status(500).json({ message: err.message })
   }
 }
+
+// POST /api/social/bookmarks/:eventId
+export const toggleBookmark = async (req, res) => {
+  try {
+    const myId = req.user._id
+    const eventId = req.params.eventId
+
+    const user = await User.findById(myId)
+    if (!user) return res.status(404).json({ message: 'User not found' })
+
+    const isBookmarked = user.bookmarkedEvents.includes(eventId)
+    
+    if (isBookmarked) {
+      user.bookmarkedEvents = user.bookmarkedEvents.filter(id => id.toString() !== eventId)
+    } else {
+      user.bookmarkedEvents.push(eventId)
+    }
+
+    await user.save()
+
+    res.json({ success: true, bookmarked: !isBookmarked, bookmarkedEvents: user.bookmarkedEvents })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}
+
+// GET /api/social/bookmarks
+export const getBookmarks = async (req, res) => {
+  try {
+    const myId = req.user._id
+    const user = await User.findById(myId).populate({
+      path: 'bookmarkedEvents',
+      select: 'title date time venue image category status'
+    })
+    
+    if (!user) return res.status(404).json({ message: 'User not found' })
+
+    res.json({ success: true, bookmarks: user.bookmarkedEvents })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}

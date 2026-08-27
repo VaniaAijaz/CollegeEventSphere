@@ -1,7 +1,9 @@
 import { format } from 'date-fns'
 import { motion } from 'framer-motion'
 import { ArrowUpRight, Bookmark, Calendar, ImageOff, MapPin, Users, Ticket } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
+import { socialApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 function safeDate(d) { try { return format(new Date(d), 'EEE, MMM d') } catch { return d || '—' } }
@@ -12,6 +14,22 @@ export default function EventCard({ event, index = 0, featured = false }) {
   const isFull   = event.totalSeats > 0 && event.seatsBooked >= event.totalSeats
   const isAlmost = pct >= 75
   const dashOffset = 100 - pct
+  const navigate = useNavigate()
+
+  const handleBook = (e) => {
+    e.preventDefault()
+    navigate(`/events/${event._id}`)
+  }
+
+  const handleBookmark = async (e) => {
+    e.preventDefault()
+    try {
+      const { data } = await socialApi.toggleBookmark(event._id)
+      toast.success(data.bookmarked ? 'Event bookmarked' : 'Bookmark removed')
+    } catch (err) {
+      toast.error('Sign in to bookmark events')
+    }
+  }
 
   /* ── FEATURED (cinematic editorial frame) ─────────────────────────────────────────── */
   if (featured) {
@@ -41,10 +59,10 @@ export default function EventCard({ event, index = 0, featured = false }) {
           
           {/* Glass Overlay on Hover */}
           <div className="absolute inset-0 glass-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center gap-4">
-            <button className="btn-editorial btn-editorial-accent" onClick={(e) => { e.preventDefault(); /* handle book */ }}>
+            <button className="btn-editorial btn-editorial-accent z-20 pointer-events-auto" onClick={handleBook}>
               <Ticket className="w-4 h-4" /> Book Ticket
             </button>
-            <button className="btn-editorial btn-editorial-outline text-white border-white/30 hover:bg-white/10" onClick={(e) => { e.preventDefault(); /* handle bookmark */ }}>
+            <button className="btn-editorial btn-editorial-outline text-white border-white/30 hover:bg-white/10 z-20 pointer-events-auto" onClick={handleBookmark}>
               <Bookmark className="w-4 h-4" /> Bookmark
             </button>
           </div>
@@ -99,10 +117,10 @@ export default function EventCard({ event, index = 0, featured = false }) {
 
         {/* Glass Overlay on Hover */}
         <div className="absolute inset-0 glass-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center gap-3">
-           <button className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-transform" onClick={(e) => { e.preventDefault(); }}>
+           <button className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-transform z-20 pointer-events-auto" onClick={handleBook}>
              <Ticket className="w-4 h-4" />
            </button>
-           <button className="w-10 h-10 rounded-full border border-white/40 text-white flex items-center justify-center hover:bg-white/20 transition-colors" onClick={(e) => { e.preventDefault(); }}>
+           <button className="w-10 h-10 rounded-full border border-white/40 text-white flex items-center justify-center hover:bg-white/20 transition-colors z-20 pointer-events-auto" onClick={handleBookmark}>
              <Bookmark className="w-4 h-4" />
            </button>
         </div>

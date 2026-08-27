@@ -13,6 +13,7 @@ import ChatbotWidget from '@/components/chatbot/ChatbotWidget'
 const Home               = lazy(() => import('@/pages/Home'))
 const Events             = lazy(() => import('@/pages/Events'))
 const EventDetail        = lazy(() => import('@/pages/EventDetail'))
+const Ticket             = lazy(() => import('@/pages/Ticket'))
 const EventBooths        = lazy(() => import('@/pages/EventBooths'))
 const Gallery            = lazy(() => import('@/pages/Gallery'))
 const Login              = lazy(() => import('@/pages/Login'))
@@ -105,6 +106,7 @@ function AnimatedRoutes() {
             <Route path="/"                    element={<Home />} />
             <Route path="/events"              element={<Events />} />
             <Route path="/events/:id"          element={<EventDetail />} />
+            <Route path="/ticket/:id"          element={<ProtectedRoute><Ticket /></ProtectedRoute>} />
             <Route path="/events/:id/booths"   element={<EventBooths />} />
             <Route path="/gallery"             element={<Gallery />} />
             <Route path="/login"               element={<Login />} />

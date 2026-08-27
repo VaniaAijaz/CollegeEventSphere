@@ -24,6 +24,7 @@ const userSchema = new mongoose.Schema(
     eventsRegistered: { type: Number, default: 0 },
     eventsAttended:   { type: Number, default: 0 },
     certificatesEarned: { type: Number, default: 0 },
+    bookmarkedEvents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
   },
   { timestamps: true }
 )

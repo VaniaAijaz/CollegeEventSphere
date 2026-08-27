@@ -3,9 +3,10 @@ import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, UserPlus, UserCheck, MessageSquare, BookOpen, Award, CheckCircle2, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
-import { socialApi } from '@/lib/api'
+import { socialApi, registrationsApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import EventCard from '@/components/events/EventCard'
 
 export default function Profile() {
   const { id } = useParams()
@@ -14,6 +15,10 @@ export default function Profile() {
   const [loading, setLoading] = useState(true)
   const [following, setFollowing] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
+  
+  const [bookedEvents, setBookedEvents] = useState([])
+  const [bookmarkedEvents, setBookmarkedEvents] = useState([])
+  const [activeTab, setActiveTab] = useState('booked')
 
   const isMe = currentUser?._id === id
 
@@ -25,7 +30,17 @@ export default function Profile() {
       })
       .catch(() => toast.error('Profile not found'))
       .finally(() => setLoading(false))
-  }, [id, currentUser?._id])
+
+    if (isMe) {
+      registrationsApi.getMyReg()
+        .then(({ data }) => setBookedEvents(data.registrations.map(r => r.event).filter(Boolean)))
+        .catch(() => {})
+      
+      socialApi.getBookmarks()
+        .then(({ data }) => setBookmarkedEvents(data.bookmarks || []))
+        .catch(() => {})
+    }
+  }, [id, currentUser?._id, isMe])
 
   const handleFollow = async () => {
     if (!currentUser) return toast.error('Login to follow users')
@@ -142,6 +157,47 @@ export default function Profile() {
             <p className="meta-text text-muted-foreground">Events Registered</p>
           </div>
         </div>
+
+        {isMe && (
+          <div className="mt-12">
+            <div className="flex gap-6 mb-8 hairline-b pb-4">
+              <button onClick={() => setActiveTab('booked')}
+                className={`text-sm font-bold uppercase tracking-widest transition-colors pb-4 -mb-[18px] ${activeTab === 'booked' ? 'text-foreground border-b-2 border-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >My Booked Events</button>
+              <button onClick={() => setActiveTab('bookmarks')}
+                className={`text-sm font-bold uppercase tracking-widest transition-colors pb-4 -mb-[18px] ${activeTab === 'bookmarks' ? 'text-foreground border-b-2 border-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >My Bookmarks</button>
+            </div>
+
+            {activeTab === 'booked' && (
+              <div>
+                {bookedEvents.length === 0 ? (
+                  <p className="meta-text text-muted-foreground p-8 editorial-frame bg-card">No booked events yet.</p>
+                ) : (
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {bookedEvents.map((event, idx) => (
+                      <EventCard key={event._id} event={event} index={idx} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'bookmarks' && (
+              <div>
+                {bookmarkedEvents.length === 0 ? (
+                  <p className="meta-text text-muted-foreground p-8 editorial-frame bg-card">No bookmarked events yet.</p>
+                ) : (
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {bookmarkedEvents.map((event, idx) => (
+                      <EventCard key={event._id} event={event} index={idx} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

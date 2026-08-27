@@ -1,18 +1,20 @@
 import { format } from 'date-fns'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Award, Bell, Calendar, CalendarPlus, CheckCircle2, Download, ExternalLink, Loader2, LogOut, QrCode, Settings, User, X } from 'lucide-react'
+import { Award, Bell, Bookmark, Calendar, CalendarPlus, CheckCircle2, Download, ExternalLink, Loader2, LogOut, QrCode, Settings, User, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import EventCard from '@/components/events/EventCard'
 import { useAuth } from '@/context/AuthContext'
-import { notificationsApi, registrationsApi } from '@/lib/api'
+import { notificationsApi, registrationsApi, socialApi } from '@/lib/api'
 import { generateCertificate } from '@/lib/certificate'
 import { cn } from '@/lib/utils'
 
 const TABS = [
   { id: 'overview',      label: 'Overview',      icon: User },
   { id: 'events',        label: 'My Events',      icon: Calendar },
+  { id: 'bookmarks',     label: 'Bookmarks',      icon: Bookmark },
   { id: 'certificates',  label: 'Certificates',   icon: Award },
   { id: 'notifications', label: 'Notifications',  icon: Bell },
   { id: 'settings',      label: 'Settings',       icon: Settings },
@@ -40,6 +42,8 @@ export default function Dashboard() {
   const [unread,        setUnread]        = useState(0)
   const [loadingReg,    setLoadingReg]    = useState(false)
   const [loadingNotif,  setLoadingNotif]  = useState(false)
+  const [bookmarks,     setBookmarks]     = useState([])
+  const [loadingBookmarks, setLoadingBookmarks] = useState(false)
   const [profileForm,   setProfileForm]   = useState({
     name: user?.name || '',
     phone: user?.phone || '',
@@ -59,6 +63,12 @@ export default function Dashboard() {
       .then(({ data }) => setRegistrations(data.registrations))
       .catch(() => {})
       .finally(() => setLoadingReg(false))
+
+    setLoadingBookmarks(true)
+    socialApi.getBookmarks()
+      .then(({ data }) => setBookmarks(data.bookmarks))
+      .catch(() => {})
+      .finally(() => setLoadingBookmarks(false))
   }, [])
 
   useEffect(() => {
@@ -298,6 +308,29 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {tab === 'bookmarks' && (
+              <div className="space-y-8">
+                <div>
+                  <h2 className="text-4xl font-extrabold tracking-tighter">My Bookmarks</h2>
+                  <p className="meta-text text-muted-foreground mt-4">Events you have saved for later.</p>
+                </div>
+                {loadingBookmarks ? (
+                  <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-foreground" /></div>
+                ) : bookmarks.length === 0 ? (
+                  <div className="text-center py-20 px-4 editorial-frame bg-secondary/10">
+                    <p className="text-muted-foreground font-medium mb-6">No bookmarks found.</p>
+                    <Link to="/events" className="btn-editorial btn-editorial-outline">Explore Directory</Link>
+                  </div>
+                ) : (
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {bookmarks.map((event, idx) => (
+                      <EventCard key={event._id} event={event} index={idx} />
                     ))}
                   </div>
                 )}

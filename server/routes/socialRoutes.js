@@ -6,7 +6,9 @@ import {
   getConversations,
   getMessages,
   sendMessage,
-  deleteChat
+  deleteChat,
+  toggleBookmark,
+  getBookmarks
 } from '../controllers/socialController.js'
 import { protect } from '../middleware/auth.js'
 
@@ -16,6 +18,9 @@ router.get('/profile/:id', getProfile)
 
 router.post('/follow/:id', protect, followUser)
 router.post('/unfollow/:id', protect, unfollowUser)
+
+router.get('/bookmarks', protect, getBookmarks)
+router.post('/bookmarks/:eventId', protect, toggleBookmark)
 
 router.get('/messages/conversations', protect, getConversations)
 router.get('/messages/:userId', protect, getMessages)

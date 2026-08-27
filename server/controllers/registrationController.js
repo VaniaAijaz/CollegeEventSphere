@@ -12,10 +12,12 @@ export const registerForEvent = async (req, res) => {
     const event = await Event.findById(req.params.eventId)
     if (!event) return res.status(404).json({ message: 'Event not found' })
 
-    if (event.status !== 'upcoming')
+    if (event.status !== 'upcoming' && event.status !== 'ongoing')
       return res.status(400).json({ message: 'Registration not open' })
 
-    if (event.registrationDeadline && new Date(event.registrationDeadline) < new Date())
+    const today = new Date().toISOString().split('T')[0]
+    const deadline = event.registrationDeadline || event.date
+    if (deadline < today)
       return res.status(400).json({ message: 'Registration deadline passed' })
 
     // already registered?
@@ -29,6 +31,7 @@ export const registerForEvent = async (req, res) => {
 
     const status = isFull ? 'waitlisted' : 'confirmed'
     const qrToken = crypto.randomBytes(20).toString('hex')
+    const attendanceCode = Math.random().toString(36).substring(2, 6).toUpperCase()
 
     let qrCode = ''
     if (status === 'confirmed') {
@@ -55,6 +58,7 @@ export const registerForEvent = async (req, res) => {
       status,
       qrToken: status === 'confirmed' ? qrToken : undefined,
       qrCode:  status === 'confirmed' ? qrCode  : undefined,
+      attendanceCode: status === 'confirmed' ? attendanceCode : undefined,
     })
 
     // increment user counter
@@ -88,14 +92,27 @@ export const cancelRegistration = async (req, res) => {
     const reg = await Registration.findOne({
       user: req.user._id,
       event: req.params.eventId,
-    })
+    }).populate('event')
     if (!reg) return res.status(404).json({ message: 'Registration not found' })
     if (reg.status === 'attended')
       return res.status(400).json({ message: 'Cannot cancel after attendance' })
 
+    const today = new Date().toISOString().split('T')[0]
+    if (reg.event.date === today) {
+      return res.status(400).json({ message: 'Cannot cancel ticket on the day of the event' })
+    }
+
+    const deadline = reg.event.registrationDeadline || reg.event.date
+    if (deadline < today) {
+      return res.status(400).json({ message: 'Cancellation deadline passed' })
+    }
+
     const wasConfirmed = reg.status === 'confirmed'
     reg.status = 'cancelled'
     reg.cancelledAt = new Date()
+    if (req.body.reason) {
+      reg.cancellationReason = req.body.reason
+    }
     await reg.save()
 
     if (wasConfirmed) {
@@ -109,9 +126,11 @@ export const cancelRegistration = async (req, res) => {
       if (next) {
         const qrToken = crypto.randomBytes(20).toString('hex')
         const qrCode  = await QRCode.toDataURL(qrToken)
+        const attendanceCode = Math.random().toString(36).substring(2, 6).toUpperCase()
         next.status   = 'confirmed'
         next.qrToken  = qrToken
         next.qrCode   = qrCode
+        next.attendanceCode = attendanceCode
         await next.save()
         await Event.findByIdAndUpdate(req.params.eventId, { $inc: { seatsBooked: 1 } })
 
@@ -167,8 +186,11 @@ export const markAttendance = async (req, res) => {
     const { qrToken } = req.body
     if (!qrToken) return res.status(400).json({ message: 'qrToken required' })
 
-    const reg = await Registration.findOne({ qrToken }).populate('event', 'title organizer')
-    if (!reg) return res.status(404).json({ message: 'Invalid QR code' })
+    const tokenUpper = qrToken.toUpperCase()
+    const reg = await Registration.findOne({
+      $or: [{ qrToken }, { attendanceCode: tokenUpper }]
+    }).populate('event', 'title organizer')
+    if (!reg) return res.status(404).json({ message: 'Invalid QR code or Pass' })
 
     // organizer can only scan their own events
     if (

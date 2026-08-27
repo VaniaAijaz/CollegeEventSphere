@@ -46,7 +46,7 @@ export const eventsApi = {
 
 export const registrationsApi = {
   register:    (eventId) => api.post(`/registrations/${eventId}`),
-  cancel:      (eventId) => api.delete(`/registrations/${eventId}`),
+  cancel:      (eventId, reason) => api.delete(`/registrations/${eventId}`, { data: { reason } }),
   getMyReg:    ()        => api.get('/registrations/my'),
   getEventReg: (eventId) => api.get(`/registrations/event/${eventId}`),
   scanQr:      (qrToken) => api.post('/registrations/scan', { qrToken }),
@@ -104,6 +104,8 @@ export const socialApi = {
   getMessages:      (userId)       => api.get(`/social/messages/${userId}`),
   sendMessage:      (userId, text) => api.post(`/social/messages/${userId}`, { text }),
   deleteChat:       (userId)       => api.delete(`/social/messages/${userId}`),
+  getBookmarks:     ()             => api.get('/social/bookmarks'),
+  toggleBookmark:   (eventId)      => api.post(`/social/bookmarks/${eventId}`),
 }
 
 export const chatbotApi = {

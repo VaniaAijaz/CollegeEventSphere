@@ -7,9 +7,11 @@ const registrationSchema = new mongoose.Schema(
     status: { type: String, enum: ['confirmed', 'waitlisted', 'attended', 'cancelled'], default: 'confirmed' },
     qrCode: { type: String },          // base64 or URL
     qrToken: { type: String, unique: true, sparse: true }, // random token embedded in QR
+    attendanceCode: { type: String, unique: true, sparse: true }, // 4-alphanumeric code for manual check-in
     attended: { type: Boolean, default: false },
     attendedAt: { type: Date },
     cancelledAt: { type: Date },
+    cancellationReason: { type: String, trim: true },
   },
   { timestamps: true }
 )

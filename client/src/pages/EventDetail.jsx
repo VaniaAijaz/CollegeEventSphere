@@ -2,13 +2,13 @@ import { format } from 'date-fns'
 import { motion } from 'framer-motion'
 import {
   ArrowLeft, Award, Calendar, CalendarPlus, CheckCircle2, Clock,
-  Copy, Loader2, MapPin, Share2, Star, Users
+  Copy, Loader2, MapPin, Share2, Star, Users, Bookmark, X
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
-import { eventsApi, registrationsApi, videosApi, reviewsApi } from '@/lib/api'
+import { eventsApi, registrationsApi, videosApi, reviewsApi, socialApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 export default function EventDetail() {
@@ -24,6 +24,10 @@ export default function EventDetail() {
   const [reviews,    setReviews]    = useState([])
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' })
   const [submittingReview, setSubmittingReview] = useState(false)
+  const [isBookmarked, setBookmarked] = useState(false)
+  const [cancelModalOpen, setCancelModalOpen] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelling, setCancelling] = useState(false)
 
   const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')
 
@@ -34,7 +38,7 @@ export default function EventDetail() {
       .finally(() => setLoading(false))
   }, [id])
 
-  // Check if user is already registered
+  // Check if user is already registered and if event is bookmarked
   useEffect(() => {
     if (!isAuth || !id) return
     registrationsApi.getMyReg()
@@ -44,6 +48,13 @@ export default function EventDetail() {
           setRegistered(true)
           setAttended(!!found.attended)
         }
+      })
+      .catch(() => {})
+
+    socialApi.getBookmarks()
+      .then(({ data }) => {
+        const bookmarked = data.bookmarks.some(b => b._id === id || b === id)
+        setBookmarked(bookmarked)
       })
       .catch(() => {})
   }, [isAuth, id])
@@ -79,6 +90,11 @@ export default function EventDetail() {
   const pct       = Math.round((event.seatsBooked / event.totalSeats) * 100)
   const isFull    = event.seatsBooked >= event.totalSeats
   const remaining = event.totalSeats - event.seatsBooked
+  
+  const today = new Date().toISOString().split('T')[0]
+  const isEventDay = event.date === today
+  const deadline = event.registrationDeadline || event.date
+  const isPastDeadline = deadline < today
 
   const handleRegister = async () => {
     if (!isAuth) { toast.error('Please sign in to register'); return }
@@ -94,6 +110,37 @@ export default function EventDetail() {
       toast.error(msg)
     } finally {
       setRegLoading(false)
+    }
+  }
+
+  const handleCancelRegistration = async (e) => {
+    e.preventDefault()
+    if (!cancelReason.trim()) {
+      toast.error('Please provide a reason for cancellation')
+      return
+    }
+    setCancelling(true)
+    try {
+      await registrationsApi.cancel(event._id, cancelReason)
+      setRegistered(false)
+      setEvent(prev => ({ ...prev, seatsBooked: Math.max(0, prev.seatsBooked - 1) }))
+      setCancelModalOpen(false)
+      toast.success('Ticket cancelled successfully')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to cancel ticket')
+    } finally {
+      setCancelling(false)
+    }
+  }
+
+  const handleToggleBookmark = async () => {
+    if (!isAuth) { toast.error('Please sign in to bookmark events'); return }
+    try {
+      const { data } = await socialApi.toggleBookmark(event._id)
+      setBookmarked(data.bookmarked)
+      toast.success(data.bookmarked ? 'Event bookmarked' : 'Bookmark removed')
+    } catch (err) {
+      toast.error('Failed to update bookmark')
     }
   }
 
@@ -157,10 +204,13 @@ export default function EventDetail() {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
 
-        <div className="absolute top-8 left-5 sm:left-12 z-20">
+        <div className="absolute top-8 left-5 sm:left-12 z-20 flex items-center gap-4">
           <Link to="/events" className="btn-editorial btn-editorial-outline !text-background !border-background/30 hover:!bg-background hover:!text-foreground px-4 py-2 text-xs">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back
           </Link>
+          <button onClick={handleToggleBookmark} className={cn("p-2 rounded-sm border border-background/30 transition-colors", isBookmarked ? 'bg-accent text-accent-foreground border-accent' : 'bg-background/20 text-background backdrop-blur-md hover:bg-background hover:text-foreground')}>
+             <Bookmark className={cn("w-5 h-5", isBookmarked && "fill-current")} />
+          </button>
         </div>
         {event.featured && (
           <div className="absolute top-8 right-5 sm:right-12 z-20">
@@ -364,13 +414,36 @@ export default function EventDetail() {
                 </div>
               </div>
               {registered ? (
-                <div className="p-6 mb-8 editorial-frame bg-secondary/10 flex items-start gap-4">
-                  <CheckCircle2 className="w-6 h-6 text-foreground shrink-0" />
-                  <div>
-                    <div className="meta-text text-foreground mb-1">Access Granted</div>
-                    <div className="text-xs font-semibold text-muted-foreground">QR code issued to email.</div>
+                <div className="p-6 mb-8 editorial-frame bg-secondary/10 flex flex-col items-start gap-4">
+                  <div className="flex items-start gap-4">
+                    <CheckCircle2 className="w-6 h-6 text-foreground shrink-0" />
+                    <div>
+                      <div className="meta-text text-foreground mb-1">Access Granted</div>
+                      <div className="text-xs font-semibold text-muted-foreground">QR code issued to email.</div>
+                    </div>
                   </div>
+                  
+                  {isEventDay && !attended && (
+                    <Link to={`/ticket/${event._id}`} className="w-full mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest border border-foreground bg-foreground text-background hover:bg-foreground/90 transition-colors">
+                      Download Ticket
+                    </Link>
+                  )}
+                  
+                  {!isEventDay && !attended && !isPastDeadline && (
+                    <button onClick={() => setCancelModalOpen(true)} className="w-full mt-2 py-2 text-xs font-bold uppercase tracking-widest border border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors">
+                      Cancel Ticket
+                    </button>
+                  )}
+                  {!isEventDay && !attended && isPastDeadline && (
+                    <div className="w-full mt-2 py-2 text-xs font-bold uppercase tracking-widest text-center border border-muted/30 text-muted-foreground bg-secondary/10">
+                      Cancellation Closed
+                    </div>
+                  )}
                 </div>
+              ) : isPastDeadline ? (
+                <button className="w-full mb-8 btn-editorial btn-editorial-outline opacity-50 cursor-not-allowed" disabled>
+                  Registration Closed
+                </button>
               ) : (
                 <button className={cn('w-full mb-8', isFull && !event.waitlistEnabled ? 'btn-editorial btn-editorial-outline opacity-50 cursor-not-allowed' : 'btn-editorial btn-editorial-primary')} onClick={handleRegister}
                   disabled={(isFull && !event.waitlistEnabled) || regLoading}
@@ -417,6 +490,38 @@ export default function EventDetail() {
           </motion.div>
         </div>
       </div>
+
+      {cancelModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-card w-full max-w-md editorial-frame p-8 relative">
+            <button onClick={() => setCancelModalOpen(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-2xl font-extrabold mb-2 tracking-tight">Cancel Ticket</h3>
+            <p className="text-sm text-muted-foreground mb-6">We're sorry you can't make it. Please let us know why you're cancelling so we can improve future events.</p>
+            <form onSubmit={handleCancelRegistration} className="space-y-4">
+              <div>
+                <label className="meta-text text-muted-foreground mb-2 block">Reason for cancellation</label>
+                <textarea 
+                  required rows={4}
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="e.g. Scheduling conflict, illness..."
+                  className="w-full p-4 editorial-frame bg-background text-base resize-none focus:outline-none focus:ring-1 focus:ring-foreground transition-all"
+                />
+              </div>
+              <div className="flex gap-4">
+                <button type="button" onClick={() => setCancelModalOpen(false)} className="btn-editorial btn-editorial-outline flex-1">
+                  Keep Ticket
+                </button>
+                <button type="submit" disabled={cancelling} className="btn-editorial bg-destructive text-destructive-foreground hover:bg-destructive/90 flex-1 flex justify-center items-center">
+                  {cancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm Cancel'}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }

@@ -39,7 +39,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-muted-foreground text-base leading-relaxed max-w-sm mb-8 font-medium">
-              Your centralized college event platform â€” discover, register, attend, and celebrate campus life.
+              Your centralized college event platform — discover, register, attend, and celebrate campus life.
             </p>
             <div className="space-y-3 text-sm font-semibold text-foreground/80">
               <a href="mailto:info@eventsphere.college" className="flex items-center gap-2.5 hover:text-primary transition-colors w-fit">
@@ -73,11 +73,11 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm font-bold text-muted-foreground">
-          <p>Â© {new Date().getFullYear()} EventSphere. Built for Aptech TechWiz 6.</p>
+          <p>© {new Date().getFullYear()} EventSphere. Built for Aptech TechWiz 6.</p>
           <div className="flex items-center gap-6">
             <Link to="/about" className="hover:text-primary transition-colors">Privacy</Link>
             <Link to="/about" className="hover:text-primary transition-colors">Terms</Link>
-            <a href="#" className="flex items-center gap-1.5 hover:text-primary transition-colors py-1 px-3 border-2 border-border dark:border-border-strong rounded-md bg-secondary text-secondary-foreground shadow-[2px_2px_0px_var(--border)] dark:shadow-[2px_2px_0px_var(--border-strong)]">
+            <a href="https://github.com/VaniaAijaz/CollegeEventSphere" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-primary transition-colors py-1 px-3 border-2 border-border dark:border-border-strong rounded-md bg-secondary text-secondary-foreground shadow-[2px_2px_0px_var(--border)] dark:shadow-[2px_2px_0px_var(--border-strong)]">
               <GitBranch className="w-4 h-4" /> GitHub <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
           </div>
