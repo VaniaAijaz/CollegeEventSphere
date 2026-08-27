@@ -15,9 +15,9 @@ import { CATEGORIES, DEPARTMENTS } from '@/data/mockData'
 import { cn } from '@/lib/utils'
 import BoothManager from '@/components/booths/BoothManager'
 
-/* ══════════════════════════════════════════════════════════════════════════
+
    CONSTANTS
-══════════════════════════════════════════════════════════════════════════ */
+
 const TABS = [
   { id: 'overview',      label: 'Overview',      icon: BarChart3  },
   { id: 'events',        label: 'My Events',      icon: Calendar   },
@@ -35,9 +35,9 @@ const EMPTY_FORM = {
   registrationDeadline: '', waitlistEnabled: false, featured: false, tags: '',
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+
    SVG SPARKLINE
-══════════════════════════════════════════════════════════════════════════ */
+
 function Sparkline({ data = [], width = 80, height = 28 }) {
   if (!data.length) return null
   const max = Math.max(...data)
@@ -62,9 +62,9 @@ function Sparkline({ data = [], width = 80, height = 28 }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+
    STATUS BADGE
-══════════════════════════════════════════════════════════════════════════ */
+
 const STATUS_COLORS = {
   upcoming:  'micro-badge-accent',
   pending:   'micro-badge',
@@ -80,9 +80,74 @@ function StatusBadge({ status }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   SOUND FEEDBACK
-══════════════════════════════════════════════════════════════════════════ */
+
+   CUSTOM EVENT SELECT  (no native dropdown — avoids OS styling issues)
+
+function EventSelect({ events, value, onChange, placeholder = '— Select an event —' }) {
+  const [open, setOpen] = useState(false)
+  const ref  = useRef(null)
+  const selected = events.find(e => e._id === value)
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div ref={ref} className="relative" style={{ maxWidth: '360px' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-3 py-2.5 text-sm hairline-all bg-card hover:bg-secondary/30 transition-colors"
+      >
+        <span className={selected ? 'text-foreground font-medium' : 'text-muted-foreground'}>
+          {selected ? selected.title : placeholder}
+        </span>
+        <ChevronRight className={cn('w-4 h-4 text-muted-foreground transition-transform shrink-0 ml-2', open && 'rotate-90')} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.12 }}
+            className="absolute top-full left-0 right-0 z-50 bg-card hairline-all shadow-lg max-h-60 overflow-y-auto"
+          >
+            {events.length === 0 && (
+              <div className="px-3 py-3 text-sm text-muted-foreground">No events available</div>
+            )}
+            {events.map(ev => (
+              <button
+                key={ev._id}
+                type="button"
+                onClick={() => { onChange(ev._id); setOpen(false) }}
+                className={cn(
+                  'w-full text-left px-3 py-2.5 text-sm transition-colors flex items-center justify-between gap-2',
+                  ev._id === value
+                    ? 'bg-foreground text-background'
+                    : 'hover:bg-secondary/50 text-foreground'
+                )}
+              >
+                <span className="truncate">{ev.title}</span>
+                <span className={cn('micro-badge shrink-0 text-[9px]',
+                  ev._id === value ? 'bg-background/20 text-background' :
+                  ev.status === 'upcoming' ? 'micro-badge-accent' :
+                  ev.status === 'pending' ? 'micro-badge' : 'micro-badge'
+                )}>
+                  {ev.status}
+                </span>
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+
+
 function playScanSound(ok) {
   try {
     const Ctx = window.AudioContext || window.webkitAudioContext
@@ -108,9 +173,9 @@ function playScanSound(ok) {
   } catch { /* ignore */ }
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+
    EVENT FORM MODAL  (create / edit)
-══════════════════════════════════════════════════════════════════════════ */
+
 function EventFormModal({ initial, onClose, onSaved }) {
   const [form, setForm] = useState(
     initial
@@ -163,15 +228,17 @@ function EventFormModal({ initial, onClose, onSaved }) {
 
   const Field = ({ label, name, type = 'text', placeholder = '' }) => (
     <div className="space-y-1">
-      <label className="meta-text">{label}</label>
-      <input type={type} value={form[name]} onChange={e => set(name, e.target.value)}
-        placeholder={placeholder} className="w-full px-3 py-2 text-sm bg-transparent" />
+      <label htmlFor={`evt-${name}`} className="meta-text">{label}</label>
+      <input id={`evt-${name}`} name={name} type={type} value={form[name]}
+        onChange={e => set(name, e.target.value)}
+        placeholder={placeholder} className="w-full px-3 py-2 text-sm bg-transparent"
+        autoComplete={type === 'date' || type === 'time' ? 'off' : undefined} />
     </div>
   )
   const SelectField = ({ label, name, options }) => (
     <div className="space-y-1">
-      <label className="meta-text">{label}</label>
-      <select value={form[name]} onChange={e => set(name, e.target.value)} className="w-full px-3 py-2 text-sm bg-card">
+      <label htmlFor={`evt-${name}`} className="meta-text">{label}</label>
+      <select id={`evt-${name}`} name={name} value={form[name]} onChange={e => set(name, e.target.value)} className="w-full px-3 py-2 text-sm bg-card">
         <option value="">Select…</option>
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
@@ -203,7 +270,7 @@ function EventFormModal({ initial, onClose, onSaved }) {
                 <label className="btn-editorial btn-editorial-outline text-xs cursor-pointer">
                   <Upload className="w-3.5 h-3.5" />
                   {imgFile ? imgFile.name : 'Upload Image'}
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImg} />
+                  <input type="file" id="evt-cover-img" name="coverImage" accept="image/*" className="hidden" onChange={handleImg} />
                 </label>
               </div>
             </div>
@@ -224,7 +291,7 @@ function EventFormModal({ initial, onClose, onSaved }) {
               {/* Description + AI caption */}
               <div className="sm:col-span-2 space-y-1">
                 <label className="meta-text">Description</label>
-                <textarea rows={3} value={form.description} onChange={e => set('description', e.target.value)}
+                <textarea id="evt-description" name="description" rows={3} value={form.description} onChange={e => set('description', e.target.value)}
                   placeholder="Describe the event…" className="w-full px-3 py-2 text-sm bg-transparent resize-none" />
                 <button type="button" onClick={handleGenerateCaption}
                   disabled={genLoading || !form.title.trim()}
@@ -290,9 +357,9 @@ function EventFormModal({ initial, onClose, onSaved }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+
    ROLES MODAL
-══════════════════════════════════════════════════════════════════════════ */
+
 function RolesModal({ onClose, onSend }) {
   const [selected, setSelected] = useState([...ALL_ROLES])
   const toggle = (r) => setSelected(p => p.includes(r) ? p.filter(x => x !== r) : [...p, r])
@@ -312,7 +379,10 @@ function RolesModal({ onClose, onSend }) {
           <div className="p-5 space-y-3">
             {ALL_ROLES.map(r => (
               <label key={r} className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" checked={selected.includes(r)} onChange={() => toggle(r)} className="w-4 h-4" />
+                <input
+                  id={`role-${r}`} name={`role-${r}`}
+                  type="checkbox" checked={selected.includes(r)}
+                  onChange={() => toggle(r)} className="w-4 h-4" />
                 <span className="capitalize font-medium text-sm">{r}</span>
               </label>
             ))}
@@ -328,22 +398,22 @@ function RolesModal({ onClose, onSend }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+
    MAIN ORGANIZER DASHBOARD
-══════════════════════════════════════════════════════════════════════════ */
+
 export default function OrganizerDashboard() {
   const { user, isAuth, logout } = useAuth()
   const navigate = useNavigate()
 
-  /* ── core ── */
+  /* -- core -- */
   const [activeTab,   setActiveTab]   = useState('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  /* ── data ── */
+  /* -- data -- */
   const [events,        setEvents]        = useState([])
   const [registrations, setRegistrations] = useState({})   // { [eventId]: [] }
 
-  /* ── ui ── */
+  /* -- ui -- */
   const [loading,          setLoading]          = useState(true)
   const [refreshing,       setRefreshing]        = useState(false)
   const [eventModal,       setEventModal]        = useState(null)   // null | 'create' | event-obj
@@ -352,20 +422,20 @@ export default function OrganizerDashboard() {
   const [regEventId,       setRegEventId]        = useState('')
   const [regLoading,       setRegLoading]        = useState(false)
 
-  /* ── attendance ── */
+  /* -- attendance -- */
   const [qrInput,     setQrInput]     = useState('')
   const [verifying,   setVerifying]   = useState(false)
   const [scanMsg,     setScanMsg]     = useState(null)
   const [scanHistory, setScanHistory] = useState([])
 
-  /* ── announcements ── */
+  /* -- announcements -- */
   const [announceTxt,     setAnnounceTxt]     = useState('')
   const [sendingAnnounce, setSendingAnnounce] = useState(false)
 
-  /* ── auth guard ── */
+  /* -- auth guard -- */
   if (!isAuth || user?.role !== 'organizer') return <Navigate to="/login" replace />
 
-  /* ── fetch ── */
+  /* -- fetch -- */
   const fetchEvents = useCallback(async (silent = false) => {
     if (!silent) setLoading(true); else setRefreshing(true)
     try {
@@ -377,7 +447,7 @@ export default function OrganizerDashboard() {
 
   useEffect(() => { fetchEvents() }, [fetchEvents])
 
-  /* ── fetch registrations for a specific event ── */
+  /* -- fetch registrations for a specific event -- */
   const fetchRegistrations = useCallback(async (eventId) => {
     if (!eventId || registrations[eventId]) return
     setRegLoading(true)
@@ -392,7 +462,7 @@ export default function OrganizerDashboard() {
     if (activeTab === 'registrations' && regEventId) fetchRegistrations(regEventId)
   }, [activeTab, regEventId])
 
-  /* ── event handlers ── */
+  /* -- event handlers -- */
   const handleEventSaved = (event, isEdit) => {
     if (isEdit) setEvents(ev => ev.map(e => e._id === event._id ? event : e))
     else        setEvents(ev => [event, ...ev])
@@ -446,7 +516,7 @@ export default function OrganizerDashboard() {
 
   const handleLogout = async () => { await logout(); navigate('/login') }
 
-  /* ── computed ── */
+  /* -- computed -- */
   const pendingEvents  = useMemo(() => events.filter(e => e.status === 'pending'),  [events])
   const upcomingEvents = useMemo(() => events.filter(e => e.status === 'upcoming'), [events])
   const totalReg       = useMemo(() => events.reduce((s, e) => s + (e.seatsBooked || 0), 0), [events])
@@ -468,7 +538,7 @@ export default function OrganizerDashboard() {
       .slice(0, 5)
   }, [events])
 
-  /* ── loading screen ── */
+  /* -- loading screen -- */
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -480,9 +550,9 @@ export default function OrganizerDashboard() {
     )
   }
 
-  /* ════════════════════════════════════════════════════════════════════
+
      RENDER
-  ════════════════════════════════════════════════════════════════════ */
+
   return (
     <div className="min-h-screen bg-background flex">
 
@@ -495,7 +565,7 @@ export default function OrganizerDashboard() {
         )}
       </AnimatePresence>
 
-      {/* ── Sidebar ── */}
+      {/* -- Sidebar -- */}
       <aside className={cn(
         'fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-card hairline-r flex flex-col shrink-0 overflow-y-auto',
         'transition-transform duration-300 lg:translate-x-0',
@@ -549,7 +619,7 @@ export default function OrganizerDashboard() {
         </div>
       </aside>
 
-      {/* ── Main content ── */}
+      {/* -- Main content -- */}
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Top bar */}
@@ -580,9 +650,9 @@ export default function OrganizerDashboard() {
         <main className="flex-1 overflow-y-auto p-6">
           <AnimatePresence mode="wait">
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 OVERVIEW
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'overview' && (
               <motion.div key="overview" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
 
@@ -726,9 +796,9 @@ export default function OrganizerDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 MY EVENTS
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'events' && (
               <motion.div key="events" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
 
@@ -823,22 +893,19 @@ export default function OrganizerDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 FLOOR PLANS / BOOTHS
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'booths' && (
               <motion.div key="booths" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
                 <div className="editorial-frame p-5 space-y-4">
                   <div>
                     <p className="meta-text mb-2">Select Event</p>
-                    <div className="relative" style={{ maxWidth: '360px' }}>
-                      <select value={selectedEventId} onChange={e => setSelectedEventId(e.target.value)}
-                        style={{ WebkitAppearance:'none', MozAppearance:'none', appearance:'none', background:'var(--card)', color:'var(--foreground)', border:'1px solid var(--border)', borderRadius:'0', width:'100%', height:'40px', padding:'0 2.5rem 0 0.75rem', fontSize:'0.875rem', fontFamily:'Inter, sans-serif', outline:'none', cursor:'pointer' }}>
-                        <option value="">— Select an event —</option>
-                        {events.map(ev => <option key={ev._id} value={ev._id}>{ev.title}</option>)}
-                      </select>
-                      <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none rotate-90" />
-                    </div>
+                    <EventSelect
+                      events={events}
+                      value={selectedEventId}
+                      onChange={setSelectedEventId}
+                    />
                   </div>
 
                   {selectedEventId ? (
@@ -853,9 +920,9 @@ export default function OrganizerDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 ATTENDANCE
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'attendance' && (
               <motion.div key="attendance" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <div className="grid lg:grid-cols-12 gap-6">
@@ -893,6 +960,8 @@ export default function OrganizerDashboard() {
                         <label className="meta-text">Pass Token / QR Code String</label>
                         <div className="flex gap-2">
                           <input
+                            id="qr-token-input"
+                            name="qrToken"
                             value={qrInput}
                             onChange={e => setQrInput(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && handleQrScan()}
@@ -945,22 +1014,18 @@ export default function OrganizerDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 REGISTRATIONS
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'registrations' && (
               <motion.div key="registrations" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
                 <div className="editorial-frame p-5">
                   <p className="meta-text mb-2">Select Event to View Registrations</p>
-                  <div className="relative" style={{ maxWidth: '360px' }}>
-                    <select value={regEventId}
-                      onChange={e => { setRegEventId(e.target.value); if (e.target.value) fetchRegistrations(e.target.value) }}
-                      style={{ WebkitAppearance:'none', MozAppearance:'none', appearance:'none', background:'var(--card)', color:'var(--foreground)', border:'1px solid var(--border)', borderRadius:'0', width:'100%', height:'40px', padding:'0 2.5rem 0 0.75rem', fontSize:'0.875rem', fontFamily:'Inter, sans-serif', outline:'none', cursor:'pointer' }}>
-                      <option value="">— Select an event —</option>
-                      {events.map(ev => <option key={ev._id} value={ev._id}>{ev.title}</option>)}
-                    </select>
-                    <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none rotate-90" />
-                  </div>
+                  <EventSelect
+                    events={events}
+                    value={regEventId}
+                    onChange={(id) => { setRegEventId(id); if (id) fetchRegistrations(id) }}
+                  />
                 </div>
 
                 {regEventId && (
@@ -1034,9 +1099,9 @@ export default function OrganizerDashboard() {
               </motion.div>
             )}
 
-            {/* ═══════════════════════════════════════════════════
+            {/* ---------------------------------------------------
                 ANNOUNCEMENTS
-            ═══════════════════════════════════════════════════ */}
+            --------------------------------------------------- */}
             {activeTab === 'announcements' && (
               <motion.div key="announcements" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="max-w-2xl space-y-4">
                 <div className="editorial-frame p-5 space-y-4">
@@ -1049,7 +1114,7 @@ export default function OrganizerDashboard() {
                   </p>
                   <div className="space-y-1">
                     <label className="meta-text">Announcement Body</label>
-                    <textarea rows={5} value={announceTxt} onChange={e => setAnnounceTxt(e.target.value)}
+                    <textarea id="announce-body" name="announcement" rows={5} value={announceTxt} onChange={e => setAnnounceTxt(e.target.value)}
                       placeholder="Draft your message…" className="w-full px-3 py-2 text-sm bg-transparent resize-none" />
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -1090,7 +1155,7 @@ export default function OrganizerDashboard() {
         </main>
       </div>
 
-      {/* ── Modals ── */}
+      {/* -- Modals -- */}
       {eventModal && (
         <EventFormModal
           initial={eventModal === 'create' ? null : eventModal}
