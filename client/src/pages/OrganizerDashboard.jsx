@@ -242,7 +242,7 @@ function EventFormModal({ initial, onClose, onSaved }) {
     setGenLoading(true); setCaptions(null)
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ai/generate-caption`,
+        `${import.meta.env.VITE_API_URL || ''}/api/ai/generate-caption`,
         { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title: form.title, description: form.description, category: form.category }) }
       )

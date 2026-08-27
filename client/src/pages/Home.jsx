@@ -192,7 +192,7 @@ export default function Home() {
     { label: 'Total Users',         value: stats.totalUsers ?? 'â€”',        Icon: Building2, bg: 'bg-card', text: 'text-card-foreground' },
   ] : STATIC_STATS
 
-  const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')
+  const API_ROOT = (import.meta.env.VITE_API_URL || '/api').replace('/api', '')
 
   // Admin ki upload ki hui video ho to wo, warna fallback demo video
   const videoSrc = heroVideo ? `${API_ROOT}${heroVideo.video_url}` : FALLBACK_HERO_VIDEO
