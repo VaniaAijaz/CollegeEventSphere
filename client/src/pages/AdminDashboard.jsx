@@ -15,9 +15,9 @@ import { CATEGORIES, DEPARTMENTS } from '@/data/mockData'
 import { cn } from '@/lib/utils'
 import BoothManager from '@/components/booths/BoothManager'
 
-/* --------------------------------------------------------------------------
+
    CONSTANTS
--------------------------------------------------------------------------- */
+
 const TABS = [
   { id: 'overview',      label: 'Overview',      icon: BarChart3  },
   { id: 'ai',            label: 'AI Copilot',    icon: Sparkles   },
@@ -36,9 +36,9 @@ const EMPTY_FORM = {
   registrationDeadline: '', waitlistEnabled: false, featured: false, tags: '',
 }
 
-/* --------------------------------------------------------------------------
+
    SVG CHART PRIMITIVES
--------------------------------------------------------------------------- */
+
 function Sparkline({ data = [], width = 80, height = 28 }) {
   if (!data.length) return null
   const max = Math.max(...data)
@@ -126,9 +126,9 @@ function DonutChart({ segments = [], size = 100 }) {
   )
 }
 
-/* --------------------------------------------------------------------------
+
    BADGE & STATUS HELPERS
--------------------------------------------------------------------------- */
+
 const STATUS_COLORS = {
   upcoming:  'micro-badge-accent',
   pending:   'micro-badge',
@@ -145,9 +145,9 @@ function StatusBadge({ status }) {
   )
 }
 
-/* --------------------------------------------------------------------------
+
    EVENT FORM MODAL
--------------------------------------------------------------------------- */
+
 function EventFormModal({ initial, onClose, onSaved }) {
   const [form, setForm] = useState(
     initial
@@ -199,21 +199,26 @@ function EventFormModal({ initial, onClose, onSaved }) {
 
   const Field = ({ label, name, type = 'text', placeholder = '' }) => (
     <div className="space-y-1">
-      <label className="meta-text">{label}</label>
+      <label htmlFor={`adm-${name}`} className="meta-text">{label}</label>
       <input
+        id={`adm-${name}`}
+        name={name}
         type={type}
         value={form[name]}
         onChange={e => set(name, e.target.value)}
         placeholder={placeholder}
         className="w-full px-3 py-2 text-sm bg-transparent"
+        autoComplete={type === 'date' || type === 'time' ? 'off' : undefined}
       />
     </div>
   )
 
   const SelectField = ({ label, name, options }) => (
     <div className="space-y-1">
-      <label className="meta-text">{label}</label>
+      <label htmlFor={`adm-${name}`} className="meta-text">{label}</label>
       <select
+        id={`adm-${name}`}
+        name={name}
         value={form[name]}
         onChange={e => set(name, e.target.value)}
         className="w-full px-3 py-2 text-sm bg-card"
@@ -255,7 +260,7 @@ function EventFormModal({ initial, onClose, onSaved }) {
                 <label className="btn-editorial btn-editorial-outline text-xs cursor-pointer">
                   <Upload className="w-3.5 h-3.5" />
                   {imgFile ? imgFile.name : 'Upload Image'}
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImg} />
+                  <input type="file" id="adm-cover-img" name="coverImage" accept="image/*" className="hidden" onChange={handleImg} />
                 </label>
               </div>
             </div>
@@ -273,8 +278,10 @@ function EventFormModal({ initial, onClose, onSaved }) {
               <Field label="Venue"                    name="venue"                placeholder="Main Auditorium" />
               <Field label="Registration Deadline"    name="registrationDeadline" type="date"   />
               <div className="sm:col-span-2">
-                <label className="meta-text block mb-1">Description</label>
+                <label htmlFor="adm-description" className="meta-text block mb-1">Description</label>
                 <textarea
+                  id="adm-description"
+                  name="description"
                   rows={3}
                   value={form.description}
                   onChange={e => set('description', e.target.value)}
@@ -287,21 +294,21 @@ function EventFormModal({ initial, onClose, onSaved }) {
               </div>
               <div className="flex items-center gap-3">
                 <input
-                  type="checkbox" id="waitlist"
+                  type="checkbox" id="adm-waitlist" name="waitlistEnabled"
                   checked={form.waitlistEnabled}
                   onChange={e => set('waitlistEnabled', e.target.checked)}
                   className="w-4 h-4"
                 />
-                <label htmlFor="waitlist" className="meta-text cursor-pointer">Enable Waitlist</label>
+                <label htmlFor="adm-waitlist" className="meta-text cursor-pointer">Enable Waitlist</label>
               </div>
               <div className="flex items-center gap-3">
                 <input
-                  type="checkbox" id="featured"
+                  type="checkbox" id="adm-featured" name="featured"
                   checked={form.featured}
                   onChange={e => set('featured', e.target.checked)}
                   className="w-4 h-4"
                 />
-                <label htmlFor="featured" className="meta-text cursor-pointer">Featured Event</label>
+                <label htmlFor="adm-featured" className="meta-text cursor-pointer">Featured Event</label>
               </div>
             </div>
 
@@ -323,9 +330,9 @@ function EventFormModal({ initial, onClose, onSaved }) {
   )
 }
 
-/* --------------------------------------------------------------------------
+
    ROLES MODAL
--------------------------------------------------------------------------- */
+
 function RolesModal({ onClose, onSend }) {
   const [selected, setSelected] = useState([...ALL_ROLES])
   const toggle = (r) =>
@@ -352,6 +359,8 @@ function RolesModal({ onClose, onSend }) {
             {ALL_ROLES.map(r => (
               <label key={r} className="flex items-center gap-3 cursor-pointer">
                 <input
+                  id={`adm-role-${r}`}
+                  name={`adm-role-${r}`}
                   type="checkbox"
                   checked={selected.includes(r)}
                   onChange={() => toggle(r)}
@@ -379,9 +388,9 @@ function RolesModal({ onClose, onSend }) {
   )
 }
 
-/* --------------------------------------------------------------------------
+
    AI COPILOT PANEL
--------------------------------------------------------------------------- */
+
 function AICopilot({ events }) {
   const [subTab,       setSubTab]       = useState('chat')
   const [messages,     setMessages]     = useState([
@@ -553,6 +562,8 @@ function AICopilot({ events }) {
 
           <div className="flex gap-2 p-3 hairline-t">
             <input
+              id="ai-chat-input"
+              name="aiMessage"
               type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
@@ -560,6 +571,7 @@ function AICopilot({ events }) {
               placeholder="Ask anything about your events…"
               className="flex-1 px-3 py-2 text-sm bg-transparent"
               disabled={thinking}
+              autoComplete="off"
             />
             <button
               onClick={() => sendMessage()}
@@ -583,6 +595,8 @@ function AICopilot({ events }) {
               </p>
             </div>
             <textarea
+              id="feedback-text"
+              name="feedbackText"
               rows={6}
               value={feedbackTxt}
               onChange={e => setFeedbackTxt(e.target.value)}
@@ -735,9 +749,9 @@ function AICopilot({ events }) {
   )
 }
 
-/* --------------------------------------------------------------------------
+
    CUSTOM EVENT SELECT  (shared — avoids OS native dropdown styling)
--------------------------------------------------------------------------- */
+
 function AdminEventSelect({ events, value, onChange, placeholder = '— Select an event —' }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -786,9 +800,9 @@ function AdminEventSelect({ events, value, onChange, placeholder = '— Select a
   )
 }
 
-/* --------------------------------------------------------------------------
+
    MAIN ADMIN DASHBOARD
--------------------------------------------------------------------------- */
+
 export default function AdminDashboard() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -998,9 +1012,9 @@ export default function AdminDashboard() {
     )
   }
 
-  /* --------------------------------------------------------------------
+
      RENDER
-  -------------------------------------------------------------------- */
+
   return (
     <div className="min-h-screen bg-background flex">
 
@@ -1648,19 +1662,24 @@ export default function AdminDashboard() {
                         <ImagePlus className="w-4 h-4 shrink-0" />
                         <span className="truncate">{galleryFile ? galleryFile.name : 'Choose file…'}</span>
                         <input
+                          id="gallery-file-input"
+                          name="galleryImage"
                           type="file" accept="image/*" className="hidden"
                           onChange={e => setGalleryFile(e.target.files?.[0] || null)}
                         />
                       </label>
                     </div>
                     <div className="space-y-1 flex-1 min-w-50">
-                      <label className="meta-text">Caption (optional)</label>
+                      <label htmlFor="gallery-caption" className="meta-text">Caption (optional)</label>
                       <input
+                        id="gallery-caption"
+                        name="caption"
                         type="text"
                         value={galleryCaption}
                         onChange={e => setGalleryCaption(e.target.value)}
                         placeholder="Add a caption…"
                         className="w-full px-3 py-2 text-sm bg-transparent"
+                        autoComplete="off"
                       />
                     </div>
                     <button type="submit" disabled={galleryUploading || !galleryFile} className="btn-editorial btn-editorial-primary text-sm">
@@ -1724,8 +1743,10 @@ export default function AdminDashboard() {
                     Broadcast a message to all users or target specific roles. Notifications are delivered in-app.
                   </p>
                   <div className="space-y-1">
-                    <label className="meta-text">Message</label>
+                    <label htmlFor="adm-announce" className="meta-text">Message</label>
                     <textarea
+                      id="adm-announce"
+                      name="announcement"
                       rows={5}
                       value={announceTxt}
                       onChange={e => setAnnounceTxt(e.target.value)}

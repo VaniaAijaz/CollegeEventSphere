@@ -15,9 +15,9 @@ import { CATEGORIES, DEPARTMENTS } from '@/data/mockData'
 import { cn } from '@/lib/utils'
 import BoothManager from '@/components/booths/BoothManager'
 
-/* --------------------------------------------------------------------------
+
    CONSTANTS
--------------------------------------------------------------------------- */
+
 const TABS = [
   { id: 'overview',      label: 'Overview',      icon: BarChart3  },
   { id: 'events',        label: 'My Events',      icon: Calendar   },
@@ -35,9 +35,9 @@ const EMPTY_FORM = {
   registrationDeadline: '', waitlistEnabled: false, featured: false, tags: '',
 }
 
-/* --------------------------------------------------------------------------
+
    SVG SPARKLINE
--------------------------------------------------------------------------- */
+
 function Sparkline({ data = [], width = 80, height = 28 }) {
   if (!data.length) return null
   const max = Math.max(...data)
@@ -62,9 +62,9 @@ function Sparkline({ data = [], width = 80, height = 28 }) {
   )
 }
 
-/* --------------------------------------------------------------------------
+
    STATUS BADGE
--------------------------------------------------------------------------- */
+
 const STATUS_COLORS = {
   upcoming:  'micro-badge-accent',
   pending:   'micro-badge',
@@ -80,9 +80,9 @@ function StatusBadge({ status }) {
   )
 }
 
-/* --------------------------------------------------------------------------
+
    CUSTOM EVENT SELECT  (no native dropdown — avoids OS styling issues)
--------------------------------------------------------------------------- */
+
 function EventSelect({ events, value, onChange, placeholder = '— Select an event —' }) {
   const [open, setOpen] = useState(false)
   const ref  = useRef(null)
@@ -147,7 +147,7 @@ function EventSelect({ events, value, onChange, placeholder = '— Select an eve
 }
 
 
--------------------------------------------------------------------------- */
+
 function playScanSound(ok) {
   try {
     const Ctx = window.AudioContext || window.webkitAudioContext
@@ -173,9 +173,9 @@ function playScanSound(ok) {
   } catch { /* ignore */ }
 }
 
-/* --------------------------------------------------------------------------
+
    EVENT FORM MODAL  (create / edit)
--------------------------------------------------------------------------- */
+
 function EventFormModal({ initial, onClose, onSaved }) {
   const [form, setForm] = useState(
     initial
@@ -228,15 +228,17 @@ function EventFormModal({ initial, onClose, onSaved }) {
 
   const Field = ({ label, name, type = 'text', placeholder = '' }) => (
     <div className="space-y-1">
-      <label className="meta-text">{label}</label>
-      <input type={type} value={form[name]} onChange={e => set(name, e.target.value)}
-        placeholder={placeholder} className="w-full px-3 py-2 text-sm bg-transparent" />
+      <label htmlFor={`evt-${name}`} className="meta-text">{label}</label>
+      <input id={`evt-${name}`} name={name} type={type} value={form[name]}
+        onChange={e => set(name, e.target.value)}
+        placeholder={placeholder} className="w-full px-3 py-2 text-sm bg-transparent"
+        autoComplete={type === 'date' || type === 'time' ? 'off' : undefined} />
     </div>
   )
   const SelectField = ({ label, name, options }) => (
     <div className="space-y-1">
-      <label className="meta-text">{label}</label>
-      <select value={form[name]} onChange={e => set(name, e.target.value)} className="w-full px-3 py-2 text-sm bg-card">
+      <label htmlFor={`evt-${name}`} className="meta-text">{label}</label>
+      <select id={`evt-${name}`} name={name} value={form[name]} onChange={e => set(name, e.target.value)} className="w-full px-3 py-2 text-sm bg-card">
         <option value="">Select…</option>
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
@@ -268,7 +270,7 @@ function EventFormModal({ initial, onClose, onSaved }) {
                 <label className="btn-editorial btn-editorial-outline text-xs cursor-pointer">
                   <Upload className="w-3.5 h-3.5" />
                   {imgFile ? imgFile.name : 'Upload Image'}
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImg} />
+                  <input type="file" id="evt-cover-img" name="coverImage" accept="image/*" className="hidden" onChange={handleImg} />
                 </label>
               </div>
             </div>
@@ -289,7 +291,7 @@ function EventFormModal({ initial, onClose, onSaved }) {
               {/* Description + AI caption */}
               <div className="sm:col-span-2 space-y-1">
                 <label className="meta-text">Description</label>
-                <textarea rows={3} value={form.description} onChange={e => set('description', e.target.value)}
+                <textarea id="evt-description" name="description" rows={3} value={form.description} onChange={e => set('description', e.target.value)}
                   placeholder="Describe the event…" className="w-full px-3 py-2 text-sm bg-transparent resize-none" />
                 <button type="button" onClick={handleGenerateCaption}
                   disabled={genLoading || !form.title.trim()}
@@ -355,9 +357,9 @@ function EventFormModal({ initial, onClose, onSaved }) {
   )
 }
 
-/* --------------------------------------------------------------------------
+
    ROLES MODAL
--------------------------------------------------------------------------- */
+
 function RolesModal({ onClose, onSend }) {
   const [selected, setSelected] = useState([...ALL_ROLES])
   const toggle = (r) => setSelected(p => p.includes(r) ? p.filter(x => x !== r) : [...p, r])
@@ -377,7 +379,10 @@ function RolesModal({ onClose, onSend }) {
           <div className="p-5 space-y-3">
             {ALL_ROLES.map(r => (
               <label key={r} className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" checked={selected.includes(r)} onChange={() => toggle(r)} className="w-4 h-4" />
+                <input
+                  id={`role-${r}`} name={`role-${r}`}
+                  type="checkbox" checked={selected.includes(r)}
+                  onChange={() => toggle(r)} className="w-4 h-4" />
                 <span className="capitalize font-medium text-sm">{r}</span>
               </label>
             ))}
@@ -393,9 +398,9 @@ function RolesModal({ onClose, onSend }) {
   )
 }
 
-/* --------------------------------------------------------------------------
+
    MAIN ORGANIZER DASHBOARD
--------------------------------------------------------------------------- */
+
 export default function OrganizerDashboard() {
   const { user, isAuth, logout } = useAuth()
   const navigate = useNavigate()
@@ -545,9 +550,9 @@ export default function OrganizerDashboard() {
     )
   }
 
-  /* --------------------------------------------------------------------
+
      RENDER
-  -------------------------------------------------------------------- */
+
   return (
     <div className="min-h-screen bg-background flex">
 
@@ -955,6 +960,8 @@ export default function OrganizerDashboard() {
                         <label className="meta-text">Pass Token / QR Code String</label>
                         <div className="flex gap-2">
                           <input
+                            id="qr-token-input"
+                            name="qrToken"
                             value={qrInput}
                             onChange={e => setQrInput(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && handleQrScan()}
@@ -1107,7 +1114,7 @@ export default function OrganizerDashboard() {
                   </p>
                   <div className="space-y-1">
                     <label className="meta-text">Announcement Body</label>
-                    <textarea rows={5} value={announceTxt} onChange={e => setAnnounceTxt(e.target.value)}
+                    <textarea id="announce-body" name="announcement" rows={5} value={announceTxt} onChange={e => setAnnounceTxt(e.target.value)}
                       placeholder="Draft your message…" className="w-full px-3 py-2 text-sm bg-transparent resize-none" />
                   </div>
                   <div className="flex flex-wrap gap-2">
